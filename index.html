@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Population Scenario Visualizer</title>
+    <link rel="stylesheet" href="./styles.css?v=28" />
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <main class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div id="placeFlag" class="mark">PV</div>
+          <div>
+            <h1>Population Visualizer</h1>
+            <p id="dataStatus">Loading demographic sources...</p>
+          </div>
+        </div>
+
+        <section class="control-block">
+          <div class="mode-row" role="tablist" aria-label="Mode">
+            <button class="tab active" data-mode="history">History</button>
+            <button class="tab" data-mode="simulation">Simulation</button>
+          </div>
+          <div class="action-grid">
+            <button id="updateCharts" class="text-button primary"><i data-lucide="refresh-cw"></i><span>Update</span></button>
+            <button id="dynamicMode" class="text-button active" aria-pressed="true"><i data-lucide="zap"></i><span>Dynamic</span></button>
+            <button id="resetLayout" class="text-button"><i data-lucide="layout-grid"></i><span>Reset</span></button>
+            <button id="exportScenario" class="text-button"><i data-lucide="download"></i><span>Export</span></button>
+          </div>
+          <label for="entitySelect">Place</label>
+          <select id="entitySelect"></select>
+          <div class="field-grid">
+            <label>
+              From
+              <input id="yearStart" type="number" min="1800" max="2400" value="1950" />
+            </label>
+            <label>
+              To
+              <input id="yearEnd" type="number" min="1800" max="2400" value="2022" />
+            </label>
+          </div>
+        </section>
+
+        <section class="control-block">
+          <div class="section-title">
+            <span>Simulation Checkpoints</span>
+            <button id="addCheckpoint" class="icon-button" title="Add checkpoint">
+              <i data-lucide="plus"></i>
+            </button>
+          </div>
+          <div id="checkpointList" class="checkpoint-list"></div>
+        </section>
+
+        <section class="control-block">
+          <div class="section-title">Panels</div>
+          <div id="panelToggles" class="panel-toggles"></div>
+        </section>
+
+        <section class="source-block">
+          <p>Sources load live from OWID grapher CSVs built from UN WPP, HMD, HYDE, Gapminder, and UN IGME. Historical mode treats 2022 as the present; 2023 onward belongs to the simulation view.</p>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <div id="dashboard" class="dashboard">
+          <article class="panel" data-panel="population" style="left: 18px; top: 18px; width: 48%; height: 510px;">
+            <header><span>Total Population</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroPopulation" type="checkbox" />Y starts at 0</label></div>
+            <div id="populationChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="vitals" style="left: calc(48% + 34px); top: 18px; width: calc(52% - 52px); height: 510px;">
+            <header><span>Births and Deaths</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroVitals" type="checkbox" />Y starts at 0</label></div>
+            <div id="vitalsChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="fertility" style="left: 18px; top: 546px; width: 32%; height: 450px;">
+            <header><span>TFR and Survival-Adjusted TFR</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroFertility" type="checkbox" />Y starts at 0</label></div>
+            <div id="fertilityChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="life" style="left: calc(32% + 34px); top: 546px; width: 32%; height: 450px;">
+            <header><span>Life Expectancy</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroLife" type="checkbox" />Y starts at 0</label></div>
+            <div id="lifeChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="growth" style="left: calc(64% + 50px); top: 546px; width: calc(36% - 68px); height: 450px;">
+            <header><span>Growth Rate</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div id="growthChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="absoluteGrowth" style="left: 18px; top: 1014px; width: 48%; height: 450px;">
+            <header><span>Absolute Growth</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroAbsoluteGrowth" type="checkbox" />Y starts at 0</label></div>
+            <div id="absoluteGrowthChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="migrationAbsolute" style="left: calc(48% + 34px); top: 1014px; width: calc(52% - 52px); height: 450px;">
+            <header><span>Net Migration</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroMigrationAbsolute" type="checkbox" />Y starts at 0</label></div>
+            <div id="migrationAbsoluteChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="migrationRate" style="left: 18px; top: 1482px; width: 48%; height: 450px;">
+            <header><span>Migration Per Mille</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroMigrationRate" type="checkbox" />Y starts at 0</label></div>
+            <div id="migrationRateChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="mortality" style="left: 18px; top: 1014px; width: 48%; height: 540px;">
+            <header><span>Death Curve by Age</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls mortality-controls">
+              <select id="mortalityCurveType" title="Curve type">
+                <option value="year">Year</option>
+                <option value="le">Life expectancy</option>
+              </select>
+              <input id="mortalityCurveValue" type="number" min="1" max="500" step="1" value="2022" />
+              <button id="addMortalityCurve" class="text-button"><i data-lucide="plus"></i><span>Add</span></button>
+              <div id="mortalityCurveList" class="curve-list"></div>
+            </div>
+            <div id="mortalityChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="pyramid" style="left: calc(48% + 34px); top: 1014px; width: calc(52% - 52px); height: 540px;">
+            <header><span>Population Pyramid</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls">
+              <label>Year<input id="pyramidYear" type="number" min="1800" max="2400" value="2022" /></label>
+              <label>Max age<input id="pyramidMaxAge" type="number" min="20" max="500" value="120" /></label>
+            </div>
+            <div id="pyramidChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="feelPyramid" style="left: 18px; top: 1572px; width: 48%; height: 540px;">
+            <header><span>Feel-Age Comparison</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls">
+              <label>Year<input id="feelPyramidYear" type="number" min="1800" max="2400" value="2022" /></label>
+              <label>Max age<input id="feelPyramidMaxAge" type="number" min="20" max="500" value="120" /></label>
+            </div>
+            <div id="feelPyramidChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="ageShare" style="left: 18px; top: 1572px; width: 48%; height: 450px;">
+            <header><span>Selected Age Share</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls">
+              <label>From age<input id="ageShareStart" type="number" min="0" max="500" value="65" /></label>
+              <label>To age<input id="ageShareEnd" type="number" min="0" max="500" value="100" /></label>
+            </div>
+            <div id="ageShareChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="agePercentile" style="left: calc(48% + 34px); top: 1572px; width: calc(52% - 52px); height: 450px;">
+            <header><span>Median / Percentile Age</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls percentile-controls">
+              <label>Percentile<input id="agePercentile" type="number" min="0" max="100" step="0.1" value="50" /></label>
+              <label class="panel-toggle-inline"><input id="zeroAgePercentile" type="checkbox" checked />Y starts at 0</label>
+            </div>
+            <div id="agePercentileChart" class="chart"></div>
+          </article>
+          <article class="panel" data-panel="healthAge" style="left: calc(48% + 34px); top: 1572px; width: calc(52% - 52px); height: 450px;">
+            <header><span>Health / Feel Age</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
+            <div class="panel-controls">
+              <label>Life expectancy<input id="healthLifeExpectancy" type="number" min="35" max="500" value="85" /></label>
+              <label>Max age<input id="healthMaxAge" type="number" min="20" max="500" value="120" /></label>
+            </div>
+            <div id="healthAgeChart" class="chart"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js?v=28"></script>
+  </body>
+</html>
