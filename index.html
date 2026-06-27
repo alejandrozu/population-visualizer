@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Population Scenario Visualizer</title>
-    <link rel="stylesheet" href="./styles.css?v=28" />
+    <link rel="stylesheet" href="./styles.css?v=29" />
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
   </head>
   <body>
-    <main class="app">
+    <main class="app" id="appShell">
       <aside class="sidebar">
         <div class="brand">
           <div id="placeFlag" class="mark">PV</div>
@@ -45,7 +45,7 @@
           </div>
         </section>
 
-        <section class="control-block">
+        <section class="control-block checkpoint-block">
           <div class="section-title">
             <span>Simulation Checkpoints</span>
             <button id="addCheckpoint" class="icon-button" title="Add checkpoint">
@@ -64,6 +64,7 @@
           <p>Sources load live from OWID grapher CSVs built from UN WPP, HMD, HYDE, Gapminder, and UN IGME. Historical mode treats 2022 as the present; 2023 onward belongs to the simulation view.</p>
         </section>
       </aside>
+      <div id="sidebarResize" class="sidebar-resize" role="separator" aria-orientation="vertical" aria-label="Resize variables panel"></div>
 
       <section class="workspace">
         <div id="dashboard" class="dashboard">
@@ -163,6 +164,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=28"></script>
+    <script src="./app.js?v=29"></script>
   </body>
 </html>
