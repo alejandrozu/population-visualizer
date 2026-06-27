@@ -2037,8 +2037,10 @@ function setupEvents() {
     state.checkpoints[index][key] = Number(input.value);
     if (key === "year") {
       window.clearTimeout(state.checkpointSortTimer);
+      const yearValue = Number(input.value);
+      const completeYear = input.value.length >= 4 && Number.isFinite(yearValue) && yearValue >= START_SIM_YEAR;
+      if (!completeYear) return;
       state.checkpointSortTimer = window.setTimeout(() => {
-        if (document.activeElement === input) return;
         commitCheckpointEdit(input);
       }, 700);
       return;
