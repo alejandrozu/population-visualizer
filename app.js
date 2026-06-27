@@ -2039,9 +2039,7 @@ function setupEvents() {
     scheduleRender();
   });
 
-  el.checkpointList.addEventListener("change", (event) => {
-    const input = event.target.closest("input[data-key]");
-    if (!input) return;
+  const commitCheckpointEdit = (input) => {
     const index = Number(input.dataset.index);
     const key = input.dataset.key;
     if (!state.checkpoints[index]) return;
@@ -2049,6 +2047,25 @@ function setupEvents() {
     sortCheckpointsByYear();
     setupCheckpoints();
     scheduleRender();
+  };
+
+  el.checkpointList.addEventListener("change", (event) => {
+    const input = event.target.closest("input[data-key]");
+    if (!input) return;
+    commitCheckpointEdit(input);
+  });
+
+  el.checkpointList.addEventListener("focusout", (event) => {
+    const input = event.target.closest("input[data-key='year']");
+    if (!input) return;
+    commitCheckpointEdit(input);
+  });
+
+  el.checkpointList.addEventListener("keydown", (event) => {
+    const input = event.target.closest("input[data-key='year']");
+    if (!input || event.key !== "Enter") return;
+    event.preventDefault();
+    commitCheckpointEdit(input);
   });
 
   el.fertilityScenarios?.addEventListener("click", (event) => {
