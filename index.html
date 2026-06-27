@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Population Scenario Visualizer</title>
-    <link rel="stylesheet" href="./styles.css?v=30" />
+    <link rel="stylesheet" href="./styles.css?v=31" />
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -55,6 +55,18 @@
           <div id="checkpointList" class="checkpoint-list"></div>
         </section>
 
+        <section class="control-block scenario-block">
+          <div class="section-title">Scenarios</div>
+          <div class="scenario-group">
+            <span>Fertility</span>
+            <div id="fertilityScenarios" class="scenario-grid"></div>
+          </div>
+          <div class="scenario-group">
+            <span>Life Expectancy</span>
+            <div id="lifeScenarios" class="scenario-grid"></div>
+          </div>
+        </section>
+
         <section class="control-block">
           <div class="section-title">Panels</div>
           <div id="panelToggles" class="panel-toggles"></div>
@@ -67,10 +79,18 @@
       <div id="sidebarResize" class="sidebar-resize" role="separator" aria-orientation="vertical" aria-label="Resize variables panel"></div>
 
       <section class="workspace">
+        <div class="workspace-toolbar">
+          <button id="resetGraphs" class="text-button"><i data-lucide="layout-grid"></i><span>Reset graphs</span></button>
+          <button id="resetZoomAll" class="text-button"><i data-lucide="zoom-out"></i><span>Reset zoom on all graphs</span></button>
+        </div>
         <div id="dashboard" class="dashboard">
           <article class="panel" data-panel="population" style="left: 18px; top: 18px; width: 48%; height: 510px;">
             <header><span>Total Population</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
-            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroPopulation" type="checkbox" />Y starts at 0</label></div>
+            <div class="panel-controls compact-controls multi-controls">
+              <label class="panel-toggle-inline"><input id="zeroPopulation" type="checkbox" />Y starts at 0</label>
+              <button id="togglePopulationKey" class="text-button mini-button" aria-expanded="false">Expand key</button>
+            </div>
+            <div id="populationKey" class="color-key" hidden></div>
             <div id="populationChart" class="chart"></div>
           </article>
           <article class="panel" data-panel="vitals" style="left: calc(48% + 34px); top: 18px; width: calc(52% - 52px); height: 510px;">
@@ -125,6 +145,7 @@
             <div class="panel-controls">
               <label>Year<input id="pyramidYear" type="number" min="1800" max="2400" value="2022" /></label>
               <label>Max age<input id="pyramidMaxAge" type="number" min="20" max="500" value="120" /></label>
+              <button id="dynamicPyramidAge" class="text-button mini-button dynamic-age-button" aria-pressed="false">Dynamic</button>
             </div>
             <div id="pyramidChart" class="chart"></div>
           </article>
@@ -133,6 +154,7 @@
             <div class="panel-controls">
               <label>Year<input id="feelPyramidYear" type="number" min="1800" max="2400" value="2022" /></label>
               <label>Max age<input id="feelPyramidMaxAge" type="number" min="20" max="500" value="120" /></label>
+              <button id="dynamicFeelPyramidAge" class="text-button mini-button dynamic-age-button" aria-pressed="false">Dynamic</button>
             </div>
             <div id="feelPyramidChart" class="chart"></div>
           </article>
@@ -164,6 +186,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=30"></script>
+    <script src="./app.js?v=31"></script>
   </body>
 </html>
