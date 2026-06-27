@@ -20,9 +20,10 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100vh;
   background: var(--bg);
   color: var(--ink);
+  overflow: hidden;
 }
 
 body.resizing-sidebar {
@@ -39,7 +40,8 @@ select {
 .app {
   display: grid;
   grid-template-columns: minmax(360px, var(--sidebar-width)) 8px minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -49,7 +51,7 @@ select {
   overflow-y: auto;
   overflow-x: hidden;
   min-width: 0;
-  max-height: 100vh;
+  height: 100vh;
 }
 
 .sidebar-resize {
@@ -256,6 +258,43 @@ button:focus-visible {
   height: 14px;
 }
 
+.scenario-block {
+  display: grid;
+  gap: 10px;
+}
+
+.scenario-group {
+  display: grid;
+  gap: 6px;
+}
+
+.scenario-group > span {
+  color: #30383c;
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.scenario-grid .text-button {
+  justify-content: center;
+  min-width: 0;
+  padding: 0 6px;
+  line-height: 1.05;
+  white-space: normal;
+}
+
+.scenario-grid .text-button.active {
+  border-color: var(--accent);
+  background: #e5f2ec;
+  color: #174b3f;
+}
+
 .panel-toggles {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -294,8 +333,24 @@ button:focus-visible {
 }
 
 .workspace {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
   min-width: 0;
   overflow: auto;
+}
+
+.workspace-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(243, 241, 235, 0.95);
+  padding: 8px 16px;
+  backdrop-filter: blur(6px);
 }
 
 .mode-row,
@@ -377,6 +432,10 @@ button:focus-visible {
   grid-template-rows: 43px auto minmax(0, 1fr);
 }
 
+.panel:has(.color-key:not([hidden])) {
+  grid-template-rows: 43px auto auto minmax(0, 1fr);
+}
+
 .panel header {
   display: flex;
   align-items: center;
@@ -443,10 +502,20 @@ button:focus-visible {
   grid-template-columns: minmax(100px, 1fr) auto;
 }
 
+.panel[data-panel="pyramid"] .panel-controls,
+.panel[data-panel="feelPyramid"] .panel-controls {
+  grid-template-columns: minmax(86px, 1fr) minmax(86px, 1fr) auto;
+}
+
 .compact-controls {
   display: flex;
   justify-content: flex-end;
   padding: 5px 10px;
+}
+
+.multi-controls {
+  gap: 8px;
+  align-items: center;
 }
 
 .panel-toggle-inline {
@@ -463,6 +532,48 @@ button:focus-visible {
   width: 14px;
   height: 14px;
   margin: 0;
+}
+
+.mini-button {
+  height: 28px;
+  min-width: max-content;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.dynamic-age-button {
+  align-self: end;
+}
+
+.color-key {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  background: #fffdf8;
+  padding: 7px 10px;
+}
+
+.color-key[hidden] {
+  display: none;
+}
+
+.key-item {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+  color: #30383c;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.key-swatch {
+  width: 18px;
+  height: 7px;
+  flex: 0 0 18px;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
 }
 
 .curve-list {
@@ -508,13 +619,21 @@ button:focus-visible {
 }
 
 @media (max-width: 980px) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
   .app {
     grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
   }
 
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+    height: auto;
     max-height: none;
   }
 
@@ -528,5 +647,14 @@ button:focus-visible {
 
   .dashboard {
     min-width: 0;
+  }
+
+  .workspace {
+    height: auto;
+    overflow: visible;
+  }
+
+  .workspace-toolbar {
+    position: static;
   }
 }
