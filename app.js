@@ -1760,6 +1760,15 @@ function setupEvents() {
     const key = input.dataset.key;
     if (!state.checkpoints[index]) return;
     state.checkpoints[index][key] = Number(input.value);
+    if (key === "year") {
+      window.clearTimeout(state.checkpointSortTimer);
+      state.checkpointSortTimer = window.setTimeout(() => {
+        sortCheckpointsByYear();
+        setupCheckpoints();
+        scheduleRender();
+      }, 450);
+      return;
+    }
     scheduleRender();
   });
 
