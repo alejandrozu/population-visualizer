@@ -2035,7 +2035,14 @@ function setupEvents() {
     const key = input.dataset.key;
     if (!state.checkpoints[index]) return;
     state.checkpoints[index][key] = Number(input.value);
-    if (key === "year") return;
+    if (key === "year") {
+      window.clearTimeout(state.checkpointSortTimer);
+      state.checkpointSortTimer = window.setTimeout(() => {
+        if (document.activeElement === input) return;
+        commitCheckpointEdit(input);
+      }, 700);
+      return;
+    }
     scheduleRender();
   });
 
