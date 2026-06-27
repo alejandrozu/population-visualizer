@@ -1,5 +1,6 @@
 :root {
   color-scheme: light;
+  --sidebar-width: 420px;
   --bg: #f3f1eb;
   --ink: #1e2326;
   --muted: #657078;
@@ -24,6 +25,11 @@ body {
   color: var(--ink);
 }
 
+body.resizing-sidebar {
+  cursor: col-resize;
+  user-select: none;
+}
+
 button,
 input,
 select {
@@ -32,7 +38,7 @@ select {
 
 .app {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: minmax(360px, var(--sidebar-width)) 8px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -43,6 +49,32 @@ select {
   overflow-y: auto;
   overflow-x: hidden;
   min-width: 0;
+  max-height: 100vh;
+}
+
+.sidebar-resize {
+  position: relative;
+  width: 8px;
+  background: linear-gradient(90deg, #eeeae0, #d9d5ca);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sidebar-resize::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 2px;
+  height: 54px;
+  border-radius: 999px;
+  background: #a8a298;
+  transform: translateY(-50%);
+}
+
+.sidebar-resize:hover,
+.sidebar-resize:focus-visible {
+  background: linear-gradient(90deg, #e4ded1, #c7c1b5);
 }
 
 .brand {
@@ -175,12 +207,26 @@ button:focus-visible {
 .checkpoint-list {
   display: grid;
   gap: 8px;
+  min-height: 0;
+}
+
+.checkpoint-block {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: min(48vh, 520px);
+}
+
+.checkpoint-block .checkpoint-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  min-height: 96px;
 }
 
 .checkpoint {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
-  gap: 5px;
+  grid-template-columns: repeat(5, minmax(58px, 1fr)) 30px;
+  gap: 6px;
   align-items: end;
 }
 
@@ -196,12 +242,12 @@ button:focus-visible {
 
 .checkpoint-actions {
   display: grid;
-  grid-template-columns: repeat(3, 24px);
+  grid-template-columns: 30px;
   gap: 3px;
 }
 
 .checkpoint-actions .icon-button {
-  width: 24px;
+  width: 30px;
   height: 30px;
 }
 
@@ -469,6 +515,15 @@ button:focus-visible {
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+    max-height: none;
+  }
+
+  .sidebar-resize {
+    display: none;
+  }
+
+  .checkpoint-block {
+    max-height: none;
   }
 
   .dashboard {
