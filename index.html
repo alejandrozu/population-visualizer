@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Population Scenario Visualizer</title>
-    <link rel="stylesheet" href="./styles.css?v=31" />
+    <link rel="stylesheet" href="./styles.css?v=32" />
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -40,7 +40,7 @@
             </label>
             <label>
               To
-              <input id="yearEnd" type="number" min="1800" max="2400" value="2022" />
+              <input id="yearEnd" type="number" min="1800" max="2400" value="2100" />
             </label>
           </div>
         </section>
@@ -105,7 +105,11 @@
           </article>
           <article class="panel" data-panel="life" style="left: calc(32% + 34px); top: 546px; width: 32%; height: 450px;">
             <header><span>Life Expectancy</span><button class="icon-button collapse" title="Minimize"><i data-lucide="minus"></i></button></header>
-            <div class="panel-controls compact-controls"><label class="panel-toggle-inline"><input id="zeroLife" type="checkbox" />Y starts at 0</label></div>
+            <div class="panel-controls compact-controls multi-controls">
+              <label class="panel-toggle-inline"><input id="zeroLife" type="checkbox" />Y starts at 0</label>
+              <button id="toggleLifeKey" class="text-button mini-button" aria-expanded="false">Expand key</button>
+            </div>
+            <div id="lifeKey" class="color-key" hidden></div>
             <div id="lifeChart" class="chart"></div>
           </article>
           <article class="panel" data-panel="growth" style="left: calc(64% + 50px); top: 546px; width: calc(36% - 68px); height: 450px;">
@@ -186,6 +190,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=31"></script>
+    <script src="./app.js?v=32"></script>
   </body>
 </html>
