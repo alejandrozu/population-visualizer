@@ -23,15 +23,34 @@ const AGE_GROUPS = [
   "75-79 years", "80-84 years", "85-89 years", "90-94 years", "95-99 years", "100+ years"
 ];
 
+const DEFAULT_ACTIVE_PANELS = ["population", "vitals", "fertility", "life", "absoluteGrowth", "mortality", "agePercentile"];
+
+const FERTILITY_SCENARIOS = {
+  replacement: { label: "2.1 forever", points: [{ year: 2030, tfr: 2.1 }, { year: 2100, tfr: 2.1 }] },
+  unMedian: { label: "UN median", points: [{ year: 2030, tfr: 2.1 }, { year: 2050, tfr: 2.0 }, { year: 2100, tfr: 1.8 }] },
+  recentTrend: { label: "Recent trend", points: [{ year: 2030, tfr: 2.0 }, { year: 2040, tfr: 1.75 }, { year: 2050, tfr: 1.6 }, { year: 2100, tfr: 1.5 }] },
+  floorOne: { label: "Floor of 1", points: [{ year: 2030, tfr: 2.0 }, { year: 2040, tfr: 1.75 }, { year: 2050, tfr: 1.5 }, { year: 2070, tfr: 1.0 }, { year: 2100, tfr: 1.0 }] },
+  noSocialRules: { label: "No social rules", points: [{ year: 2030, tfr: 2.0 }, { year: 2035, tfr: 1.9 }, { year: 2040, tfr: 1.6 }, { year: 2050, tfr: 1.2 }, { year: 2100, tfr: 1.0 }] }
+};
+
+const LIFE_SCENARIOS = {
+  halt: { label: "Halt" },
+  quarterForever: { label: "0.25 forever" },
+  approaching95: { label: "Approaching 95" },
+  slowLev: { label: "Slow LEV" },
+  mediumLev: { label: "Medium LEV" },
+  fastLev: { label: "Fast LEV" }
+};
+
+const DEFAULT_FERTILITY_SCENARIO = "recentTrend";
+const DEFAULT_LIFE_SCENARIO = "mediumLev";
 const DEFAULT_CHECKPOINTS = [
   { year: 2030, tfr: 2.0, life: 76, migration: 0.0, caution: 0.0 },
-  { year: 2035, tfr: 1.85, life: 83, migration: 0.0, caution: 0.0 },
-  { year: 2040, tfr: 1.7, life: 90, migration: 0.0, caution: 0.0 },
-  { year: 2050, tfr: 1.6, life: 120, migration: 0.0, caution: 0.0 },
-  { year: 2100, tfr: 1.5, life: 200, migration: 0.0, caution: 1.0 }
+  { year: 2035, tfr: 1.875, life: 78.5, migration: 0.0, caution: 0.0 },
+  { year: 2040, tfr: 1.75, life: 83.5, migration: 0.0, caution: 0.0 },
+  { year: 2050, tfr: 1.6, life: 98.5, migration: 0.0, caution: 0.0 },
+  { year: 2100, tfr: 1.5, life: 173.5, migration: 0.0, caution: 1.0 }
 ];
-
-const DEFAULT_ACTIVE_PANELS = ["population", "vitals", "fertility", "life", "growth", "mortality", "agePercentile"];
 
 const PANELS = [
   ["population", "Total Population"],
@@ -92,6 +111,11 @@ const state = {
   dynamic: true,
   dirty: false,
   activePanels: new Set(DEFAULT_ACTIVE_PANELS),
+  fertilityScenario: DEFAULT_FERTILITY_SCENARIO,
+  lifeScenario: DEFAULT_LIFE_SCENARIO,
+  populationKeyExpanded: false,
+  dynamicPyramidAge: false,
+  dynamicFeelPyramidAge: false,
   mortalityCurves: [
     { type: "le", value: 75 },
     { type: "year", value: START_SIM_YEAR }
@@ -136,7 +160,15 @@ const el = {
   dynamicMode: document.querySelector("#dynamicMode"),
   resetLayout: document.querySelector("#resetLayout"),
   exportScenario: document.querySelector("#exportScenario"),
-  sidebarResize: document.querySelector("#sidebarResize")
+  sidebarResize: document.querySelector("#sidebarResize"),
+  resetGraphs: document.querySelector("#resetGraphs"),
+  resetZoomAll: document.querySelector("#resetZoomAll"),
+  fertilityScenarios: document.querySelector("#fertilityScenarios"),
+  lifeScenarios: document.querySelector("#lifeScenarios"),
+  togglePopulationKey: document.querySelector("#togglePopulationKey"),
+  populationKey: document.querySelector("#populationKey"),
+  dynamicPyramidAge: document.querySelector("#dynamicPyramidAge"),
+  dynamicFeelPyramidAge: document.querySelector("#dynamicFeelPyramidAge")
 };
 
 function parseCsv(text) {
@@ -342,6 +374,10 @@ function lerp(a, b, t) {
 }
 
 function checkpointValue(year, key, entity = el.entitySelect.value || "World") {
+  return valueFromCheckpoints(state.checkpoints, year, key, entity);
+}
+
+function valueFromCheckpoints(checkpoints, year, key, entity = el.entitySelect.value || "World") {
   const baseline = {
     year: START_SIM_YEAR,
     tfr: observedTfr(entity, START_SIM_YEAR) ?? observedTfr(entity, START_SIM_YEAR - 1) ?? 2.2,
@@ -349,7 +385,7 @@ function checkpointValue(year, key, entity = el.entitySelect.value || "World") {
     migration: 0,
     caution: 0
   };
-  const points = [baseline, ...state.checkpoints.filter((p) => p.year > START_SIM_YEAR)].sort((a, b) => a.year - b.year);
+  const points = [baseline, ...checkpoints.filter((p) => p.year > START_SIM_YEAR)].sort((a, b) => a.year - b.year);
   if (year <= points[0].year) return points[0][key];
   if (year >= points[points.length - 1].year) return points[points.length - 1][key];
   for (let i = 0; i < points.length - 1; i += 1) {
@@ -867,6 +903,115 @@ function getChildMortality(entity, year, life) {
   return (1 - survivalToAge(qx, 15)) * 100;
 }
 
+function lifeWithRateSchedule(baseLife, targetYear, schedule) {
+  let life = baseLife;
+  let cursor = START_SIM_YEAR;
+  for (const segment of schedule) {
+    const until = Math.min(targetYear, segment.until);
+    if (until > cursor) {
+      life += (until - cursor) * segment.rate;
+      cursor = until;
+    }
+    if (targetYear <= segment.until) break;
+  }
+  return clamp(life, 1, MAX_AGE);
+}
+
+function lifeScenarioPoints(key, entity = el.entitySelect.value || "World") {
+  const baseLife = getLife(entity, START_SIM_YEAR) ?? getLife(entity, START_SIM_YEAR - 1) ?? 74;
+  const point = (year, life) => ({ year, life: clamp(life, 1, MAX_AGE) });
+  if (key === "halt") {
+    return [2030, 2100].map((year) => point(year, baseLife));
+  }
+  if (key === "quarterForever") {
+    return [2030, 2050, 2100, 2400].map((year) => point(year, baseLife + (year - START_SIM_YEAR) * 0.25));
+  }
+  if (key === "approaching95") {
+    const years = [2030, 2050, 2100, 2400];
+    return years.map((year) => {
+      let life = baseLife;
+      let cursor = START_SIM_YEAR;
+      if (life < 85) {
+        const yearsTo85 = (85 - life) / 0.25;
+        const end = Math.min(year, cursor + yearsTo85);
+        life += Math.max(0, end - cursor) * 0.25;
+        cursor = end;
+      }
+      if (year > cursor && life < 95) {
+        const yearsTo95 = (95 - life) / 0.1;
+        const end = Math.min(year, cursor + yearsTo95);
+        life += Math.max(0, end - cursor) * 0.1;
+      }
+      return point(year, Math.min(life, 95));
+    });
+  }
+  if (key === "slowLev") {
+    const schedule = [{ until: 2030, rate: 0.25 }, { until: 2035, rate: 0.4 }, { until: 2040, rate: 0.8 }, { until: 2400, rate: 1.2 }];
+    return [2030, 2035, 2040, 2050, 2100, 2400].map((year) => point(year, lifeWithRateSchedule(baseLife, year, schedule)));
+  }
+  if (key === "fastLev") {
+    return [
+      point(2030, baseLife + (2030 - START_SIM_YEAR) * 0.25),
+      point(2035, baseLife + 8 * 0.25 + 5 * 0.8),
+      point(2040, baseLife + 8 * 0.25 + 5 * 0.8 + 5 * 1.5),
+      point(2050, 150),
+      point(2100, 225),
+      point(2400, 500)
+    ];
+  }
+  const schedule = [{ until: 2030, rate: 0.25 }, { until: 2035, rate: 0.5 }, { until: 2040, rate: 1.0 }, { until: 2400, rate: 1.5 }];
+  return [2030, 2035, 2040, 2050, 2100, 2400].map((year) => point(year, lifeWithRateSchedule(baseLife, year, schedule)));
+}
+
+function fertilityScenarioPoints(key) {
+  return FERTILITY_SCENARIOS[key]?.points || FERTILITY_SCENARIOS[DEFAULT_FERTILITY_SCENARIO].points;
+}
+
+function valueFromScenarioPoints(points, year, key, fallback) {
+  const sorted = points.slice().sort((a, b) => a.year - b.year);
+  if (!sorted.length) return fallback;
+  if (year <= sorted[0].year) return sorted[0][key];
+  if (year >= sorted[sorted.length - 1].year) return sorted[sorted.length - 1][key];
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const a = sorted[i];
+    const b = sorted[i + 1];
+    if (year >= a.year && year <= b.year) {
+      return lerp(a[key], b[key], (year - a.year) / (b.year - a.year));
+    }
+  }
+  return fallback;
+}
+
+function applyCheckpointScenario({ fertilityKey = state.fertilityScenario, lifeKey = state.lifeScenario, updateFertility = true, updateLife = true } = {}) {
+  const entity = el.entitySelect.value || "World";
+  const previous = structuredClone(state.checkpoints);
+  const fertilityPoints = updateFertility ? fertilityScenarioPoints(fertilityKey) : [];
+  const lifePoints = updateLife ? lifeScenarioPoints(lifeKey, entity) : [];
+  const years = [...new Set([
+    ...previous.map((p) => p.year),
+    ...fertilityPoints.map((p) => p.year),
+    ...lifePoints.map((p) => p.year)
+  ])].sort((a, b) => a - b);
+
+  state.checkpoints = years.map((year) => ({
+    year,
+    tfr: updateFertility
+      ? valueFromScenarioPoints(fertilityPoints, year, "tfr", valueFromCheckpoints(previous, year, "tfr", entity))
+      : valueFromCheckpoints(previous, year, "tfr", entity),
+    life: updateLife
+      ? valueFromScenarioPoints(lifePoints, year, "life", valueFromCheckpoints(previous, year, "life", entity))
+      : valueFromCheckpoints(previous, year, "life", entity),
+    migration: valueFromCheckpoints(previous, year, "migration", entity),
+    caution: valueFromCheckpoints(previous, year, "caution", entity)
+  }));
+  if (updateFertility) state.fertilityScenario = fertilityKey;
+  if (updateLife) state.lifeScenario = lifeKey;
+  sortCheckpointsByYear();
+  setupCheckpoints();
+  renderScenarioButtons();
+  scheduleRender();
+}
+
 function clampAnnualCount(count, population, minRate, maxRate) {
   if (!Number.isFinite(count) || !Number.isFinite(population) || population <= 0) return count;
   return clamp(count, population * minRate, population * maxRate);
@@ -1054,8 +1199,8 @@ function baseLayout(titleY = "") {
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "Inter, Segoe UI, sans-serif", color: "#1e2326", size: 12 },
-    xaxis: { gridcolor: "#eee9de", zerolinecolor: "#d7d4ca" },
-    yaxis: { title: titleY, gridcolor: "#eee9de", zerolinecolor: "#d7d4ca" },
+    xaxis: { gridcolor: "#eee9de", zerolinecolor: "#d7d4ca", nticks: 9 },
+    yaxis: { title: titleY, gridcolor: "#eee9de", zerolinecolor: "#d7d4ca", nticks: 8 },
     legend: { orientation: "h", y: 1.22, x: 0, yanchor: "bottom", font: { size: 11 } },
     hovermode: "x unified"
   };
@@ -1086,8 +1231,80 @@ function plotLine(target, traces, yTitle = "", options = {}) {
   }
   Plotly.react(target, traces, layout, {
     responsive: true,
-    displayModeBar: false
+    displayModeBar: false,
+    doubleClick: "reset"
   });
+}
+
+const POPULATION_GROWTH_COLORS = [
+  { min: 2, label: "> 2%", color: "#c7352f" },
+  { min: 1.5, max: 2, label: "1.5-2%", color: "#c85b16" },
+  { min: 1, max: 1.5, label: "1-1.5%", color: "#d4921e" },
+  { min: 0.75, max: 1, label: "0.75-1%", color: "#dfc33a" },
+  { min: 0.5, max: 0.75, label: "0.5-0.75%", color: "#9bc93a" },
+  { min: 0.25, max: 0.5, label: "0.25-0.5%", color: "#3f9e4b" },
+  { min: 0.1, max: 0.25, label: "0.1-0.25%", color: "#176b3a" },
+  { min: 0, max: 0.1, label: "0-0.1%", color: "#0f5c63" },
+  { min: -0.25, max: 0, label: "-0.25-0%", color: "#18a9f2" },
+  { min: -0.5, max: -0.25, label: "-0.5--0.25%", color: "#1d65f2" },
+  { min: -1, max: -0.5, label: "-1--0.5%", color: "#7c45c4" },
+  { max: -1, label: "< -1%", color: "#8b145a" }
+];
+
+const LIFE_CHANGE_COLORS = [
+  { max: 0, label: "decrease", color: "#c7352f" },
+  { min: 0, max: 0.2, label: "0-0.2 y/y", color: "#dfc33a" },
+  { min: 0.2, max: 0.4, label: "0.2-0.4 y/y", color: "#9bc93a" },
+  { min: 0.4, max: 0.8, label: "0.4-0.8 y/y", color: "#3f9e4b" },
+  { min: 0.8, max: 1.2, label: "0.8-1.2 y/y", color: "#2dbec7" },
+  { min: 1.2, max: 2, label: "1.2-2 y/y", color: "#18a9f2" },
+  { min: 2, label: "> 2 y/y", color: "#174fb8" }
+];
+
+function colorForValue(value, bands) {
+  for (const band of bands) {
+    const above = band.min === undefined || value >= band.min;
+    const below = band.max === undefined || value < band.max;
+    if (above && below) return band.color;
+  }
+  return bands[bands.length - 1].color;
+}
+
+function segmentedLineTraces(years, values, metricValues, bands, name, hoverFormat = ",.0f") {
+  const outline = {
+    x: years,
+    y: values,
+    name: `${name} outline`,
+    type: "scatter",
+    mode: "lines",
+    line: { color: "#141414", width: 5 },
+    hoverinfo: "skip",
+    showlegend: false
+  };
+  const segments = [outline];
+  for (let i = 1; i < years.length; i += 1) {
+    const metric = Number.isFinite(metricValues[i]) ? metricValues[i] : metricValues[i - 1];
+    const color = colorForValue(metric, bands);
+    segments.push({
+      x: [years[i - 1], years[i]],
+      y: [values[i - 1], values[i]],
+      name,
+      type: "scatter",
+      mode: "lines",
+      line: { color, width: 3 },
+      legendgroup: name,
+      showlegend: i === 1,
+      hovertemplate: `%{y:${hoverFormat}}<extra>${name}</extra>`
+    });
+  }
+  return segments;
+}
+
+function renderColorKey(container, bands) {
+  if (!container) return;
+  container.innerHTML = bands.map((band) => `
+    <span class="key-item"><span class="key-swatch" style="background:${band.color}"></span>${band.label}</span>
+  `).join("");
 }
 
 function scheduleRender({ force = false } = {}) {
@@ -1125,12 +1342,32 @@ function render() {
   fitDashboardHeight();
 }
 
+function resetZoomAllGraphs() {
+  render();
+  setTimeout(() => {
+    document.querySelectorAll(".chart").forEach((chart) => {
+      if (chart.offsetParent) Plotly.Plots.resize(chart).catch(() => {});
+    });
+  }, 40);
+}
+
+function dynamicAgeLimitForCohorts(cohorts, buffer = 5) {
+  const p = percentileAge(cohorts, 99.9);
+  return clamp(Math.ceil((Number.isFinite(p) ? p : 120) + buffer), 20, MAX_AGE);
+}
+
 function renderCharts(rows) {
   const years = rows.map((r) => r.year);
   if (state.activePanels.has("population")) {
-    plotLine("populationChart", [
-      { x: years, y: rows.map((r) => r.population), name: "Population", type: "scatter", mode: "lines", line: { color: "#277a68", width: 3 } }
-    ], "people", { zeroY: el.zeroPopulation.checked });
+    renderColorKey(el.populationKey, POPULATION_GROWTH_COLORS);
+    if (el.populationKey) el.populationKey.hidden = !state.populationKeyExpanded;
+    const populationValues = rows.map((r) => r.population);
+    const growthValues = rows.map((r, i) => Number.isFinite(r.growth)
+      ? r.growth
+      : i > 0 && Number.isFinite(rows[i - 1]?.population) && Number.isFinite(r.population)
+      ? (r.population / rows[i - 1].population - 1) * 100
+      : 0);
+    plotLine("populationChart", segmentedLineTraces(years, populationValues, growthValues, POPULATION_GROWTH_COLORS, "Population"), "people", { zeroY: el.zeroPopulation.checked });
   }
 
   if (state.activePanels.has("vitals")) {
@@ -1148,9 +1385,9 @@ function renderCharts(rows) {
   }
 
   if (state.activePanels.has("life")) {
-    plotLine("lifeChart", [
-      { x: years, y: rows.map((r) => r.life), name: "Life expectancy", type: "scatter", mode: "lines", line: { color: "#277a68", width: 3 } }
-    ], "years", { zeroY: el.zeroLife.checked });
+    const lifeValues = rows.map((r) => r.life);
+    const lifeChanges = rows.map((r, i) => i === 0 ? 0 : (r.life ?? 0) - (rows[i - 1]?.life ?? r.life ?? 0));
+    plotLine("lifeChart", segmentedLineTraces(years, lifeValues, lifeChanges, LIFE_CHANGE_COLORS, "Life expectancy", ".1f"), "years", { zeroY: el.zeroLife.checked });
   }
 
   if (state.activePanels.has("growth")) {
@@ -1270,7 +1507,7 @@ function renderMortalityChart(rows) {
   layout.yaxis.ticktext = ticks.text;
   layout.xaxis.range = [0, maxAge];
   layout.margin.t = 58;
-  Plotly.react("mortalityChart", traces, layout, { responsive: true, displayModeBar: false });
+  Plotly.react("mortalityChart", traces, layout, { responsive: true, displayModeBar: false, doubleClick: "reset" });
 }
 
 function ageAtRate(qx, threshold) {
@@ -1315,10 +1552,13 @@ function renderPyramid(rows) {
   const targetYear = clamp(Number(el.pyramidYear.value) || START_SIM_YEAR, 1800, 2400);
   const row = rowForPyramidYear(rows, targetYear);
   if (!row) {
-    Plotly.react("pyramidChart", [], baseLayout("people"), { responsive: true, displayModeBar: false });
+    Plotly.react("pyramidChart", [], baseLayout("people"), { responsive: true, displayModeBar: false, doubleClick: "reset" });
     return;
   }
-  const ageLimit = clamp(Number(el.pyramidMaxAge.value) || mortalityAgeLimit(row.life, 0, "general"), 20, MAX_AGE);
+  const ageLimit = state.dynamicPyramidAge
+    ? dynamicAgeLimitForCohorts(row.cohorts)
+    : clamp(Number(el.pyramidMaxAge.value) || mortalityAgeLimit(row.life, 0, "general"), 20, MAX_AGE);
+  if (state.dynamicPyramidAge && el.pyramidMaxAge) el.pyramidMaxAge.value = ageLimit;
   const ages = Array.from({ length: ageLimit + 1 }, (_, i) => i);
   const half = ages.map((age) => (row.cohorts[age] || 0) / 2);
   const traces = [
@@ -1331,20 +1571,24 @@ function renderPyramid(rows) {
   layout.yaxis.range = [0, ageLimit];
   layout.yaxis.dtick = 20;
   applyPyramidHoverLayout(layout);
-  Plotly.react("pyramidChart", traces, layout, { responsive: true, displayModeBar: false });
+  Plotly.react("pyramidChart", traces, layout, { responsive: true, displayModeBar: false, doubleClick: "reset" });
 }
 
 function renderFeelPyramid(rows) {
   const targetYear = clamp(Number(el.feelPyramidYear.value) || START_SIM_YEAR, 1800, 2400);
   const row = rowForPyramidYear(rows, targetYear);
   if (!row) {
-    Plotly.react("feelPyramidChart", [], baseLayout("people"), { responsive: true, displayModeBar: false });
+    Plotly.react("feelPyramidChart", [], baseLayout("people"), { responsive: true, displayModeBar: false, doubleClick: "reset" });
     return;
   }
-  const ageLimit = clamp(Number(el.feelPyramidMaxAge.value) || mortalityAgeLimit(row.life, 20, "disease"), 20, MAX_AGE);
+  const feelDistributionValues = feelDistribution(row.cohorts, row.life);
+  const ageLimit = state.dynamicFeelPyramidAge
+    ? dynamicAgeLimitForCohorts(feelDistributionValues)
+    : clamp(Number(el.feelPyramidMaxAge.value) || mortalityAgeLimit(row.life, 20, "disease"), 20, MAX_AGE);
+  if (state.dynamicFeelPyramidAge && el.feelPyramidMaxAge) el.feelPyramidMaxAge.value = ageLimit;
   const ages = Array.from({ length: ageLimit - 19 }, (_, i) => i + 20);
   const actualHalf = ages.map((age) => (row.cohorts[age] || 0) / 2);
-  const feel = feelDistribution(row.cohorts, row.life).map((v) => v / 2);
+  const feel = feelDistributionValues.map((v) => v / 2);
   const feelHalf = ages.map((age) => feel[age] || 0);
   const actualMax = Math.max(...actualHalf, 1);
   const feelMax = Math.max(...feelHalf, 1);
@@ -1362,7 +1606,7 @@ function renderFeelPyramid(rows) {
   layout.yaxis.range = [20, ageLimit];
   layout.yaxis.dtick = 20;
   applyPyramidHoverLayout(layout);
-  Plotly.react("feelPyramidChart", traces, layout, { responsive: true, displayModeBar: false });
+  Plotly.react("feelPyramidChart", traces, layout, { responsive: true, displayModeBar: false, doubleClick: "reset" });
 }
 
 function feelDistribution(cohorts, life) {
@@ -1435,6 +1679,20 @@ function setupCheckpoints() {
       `;
       el.checkpointList.appendChild(row);
     });
+  lucide.createIcons();
+}
+
+function renderScenarioButtons() {
+  if (el.fertilityScenarios) {
+    el.fertilityScenarios.innerHTML = Object.entries(FERTILITY_SCENARIOS).map(([key, scenario]) => (
+      `<button class="text-button ${state.fertilityScenario === key ? "active" : ""}" data-fertility-scenario="${key}">${scenario.label}</button>`
+    )).join("");
+  }
+  if (el.lifeScenarios) {
+    el.lifeScenarios.innerHTML = Object.entries(LIFE_SCENARIOS).map(([key, scenario]) => (
+      `<button class="text-button ${state.lifeScenario === key ? "active" : ""}" data-life-scenario="${key}">${scenario.label}</button>`
+    )).join("");
+  }
   lucide.createIcons();
 }
 
@@ -1596,6 +1854,23 @@ function settlePanelLayout(activePanel = null) {
     }
     movePanelTo(panel, box.left, box.top);
     placed.push({ panel, box: panelBox(panel) });
+  }
+
+  const compacted = panels
+    .sort((a, b) => panelBox(a).top - panelBox(b).top || panelBox(a).left - panelBox(b).left);
+  for (const panel of compacted) {
+    if (panel === activePanel) continue;
+    const box = panelBox(panel);
+    let top = 16;
+    for (const other of panels) {
+      if (other === panel) continue;
+      const otherBox = panelBox(other);
+      const horizontalOverlap = box.left < otherBox.right + gap && box.right + gap > otherBox.left;
+      if (horizontalOverlap && otherBox.bottom + gap <= box.top) {
+        top = Math.max(top, otherBox.bottom + gap);
+      }
+    }
+    if (top < box.top) movePanelTo(panel, box.left, top);
   }
 
   fitDashboardHeight();
@@ -1760,15 +2035,7 @@ function setupEvents() {
     const key = input.dataset.key;
     if (!state.checkpoints[index]) return;
     state.checkpoints[index][key] = Number(input.value);
-    if (key === "year") {
-      window.clearTimeout(state.checkpointSortTimer);
-      state.checkpointSortTimer = window.setTimeout(() => {
-        sortCheckpointsByYear();
-        setupCheckpoints();
-        scheduleRender();
-      }, 450);
-      return;
-    }
+    if (key === "year") return;
     scheduleRender();
   });
 
@@ -1782,6 +2049,18 @@ function setupEvents() {
     sortCheckpointsByYear();
     setupCheckpoints();
     scheduleRender();
+  });
+
+  el.fertilityScenarios?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-fertility-scenario]");
+    if (!button) return;
+    applyCheckpointScenario({ fertilityKey: button.dataset.fertilityScenario, updateFertility: true, updateLife: false });
+  });
+
+  el.lifeScenarios?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-life-scenario]");
+    if (!button) return;
+    applyCheckpointScenario({ lifeKey: button.dataset.lifeScenario, updateFertility: false, updateLife: true });
   });
 
   el.checkpointList.addEventListener("click", (event) => {
@@ -1825,7 +2104,7 @@ function setupEvents() {
         el.yearEnd.value = START_SIM_YEAR;
         setPanelPreset(DEFAULT_ACTIVE_PANELS);
       } else if (state.mode === "simulation") {
-        el.yearStart.value = START_SIM_YEAR;
+        el.yearStart.value = 1950;
         el.yearEnd.value = 2100;
         setPanelPreset(DEFAULT_ACTIVE_PANELS);
       }
@@ -1842,6 +2121,30 @@ function setupEvents() {
     if (state.dynamic && state.dirty) scheduleRender({ force: true });
   });
   el.resetLayout.addEventListener("click", resetAll);
+  el.resetGraphs?.addEventListener("click", () => {
+    resetLayout();
+    scheduleRender({ force: true });
+  });
+  el.resetZoomAll?.addEventListener("click", resetZoomAllGraphs);
+  el.togglePopulationKey?.addEventListener("click", () => {
+    state.populationKeyExpanded = !state.populationKeyExpanded;
+    el.togglePopulationKey.textContent = state.populationKeyExpanded ? "Hide key" : "Expand key";
+    el.togglePopulationKey.setAttribute("aria-expanded", String(state.populationKeyExpanded));
+    if (el.populationKey) el.populationKey.hidden = !state.populationKeyExpanded;
+    setTimeout(() => Plotly.Plots.resize(document.querySelector("#populationChart")).catch(() => {}), 40);
+  });
+  el.dynamicPyramidAge?.addEventListener("click", () => {
+    state.dynamicPyramidAge = !state.dynamicPyramidAge;
+    el.dynamicPyramidAge.classList.toggle("active", state.dynamicPyramidAge);
+    el.dynamicPyramidAge.setAttribute("aria-pressed", String(state.dynamicPyramidAge));
+    scheduleRender();
+  });
+  el.dynamicFeelPyramidAge?.addEventListener("click", () => {
+    state.dynamicFeelPyramidAge = !state.dynamicFeelPyramidAge;
+    el.dynamicFeelPyramidAge.classList.toggle("active", state.dynamicFeelPyramidAge);
+    el.dynamicFeelPyramidAge.setAttribute("aria-pressed", String(state.dynamicFeelPyramidAge));
+    scheduleRender();
+  });
   el.exportScenario.addEventListener("click", exportScenario);
   window.addEventListener("resize", () => {
     window.clearTimeout(state.resizeTimer);
@@ -1860,6 +2163,11 @@ function resetAll() {
   state.mode = "history";
   state.dynamic = true;
   state.dirty = false;
+  state.fertilityScenario = DEFAULT_FERTILITY_SCENARIO;
+  state.lifeScenario = DEFAULT_LIFE_SCENARIO;
+  state.populationKeyExpanded = false;
+  state.dynamicPyramidAge = false;
+  state.dynamicFeelPyramidAge = false;
   if (state.entities.length) el.dataStatus.textContent = `${state.entities.length} places loaded.`;
   state.activePanels = new Set(DEFAULT_ACTIVE_PANELS);
   state.mortalityCurves = [{ type: "le", value: 75 }, { type: "year", value: START_SIM_YEAR }];
@@ -1868,6 +2176,16 @@ function resetAll() {
   el.yearEnd.value = START_SIM_YEAR;
   el.dynamicMode.classList.add("active");
   el.dynamicMode.setAttribute("aria-pressed", "true");
+  if (el.togglePopulationKey) {
+    el.togglePopulationKey.textContent = "Expand key";
+    el.togglePopulationKey.setAttribute("aria-expanded", "false");
+  }
+  if (el.populationKey) el.populationKey.hidden = true;
+  [el.dynamicPyramidAge, el.dynamicFeelPyramidAge].forEach((button) => {
+    if (!button) return;
+    button.classList.remove("active");
+    button.setAttribute("aria-pressed", "false");
+  });
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.mode === "history"));
   el.ageShareStart.value = 65;
   el.ageShareEnd.value = 100;
@@ -1883,7 +2201,7 @@ function resetAll() {
   if (el.zeroAgePercentile) el.zeroAgePercentile.checked = true;
   localStorage.removeItem("populationVisualizer.sidebarWidth");
   setSidebarWidth(420, false);
-  setupCheckpoints();
+  applyCheckpointScenario({ fertilityKey: DEFAULT_FERTILITY_SCENARIO, lifeKey: DEFAULT_LIFE_SCENARIO, updateFertility: true, updateLife: true });
   setPanelPreset([...state.activePanels]);
   resetLayout();
   scheduleRender({ force: true });
@@ -2012,6 +2330,7 @@ function populateEntities() {
 
 async function init() {
   setupCheckpoints();
+  renderScenarioButtons();
   renderPanelToggles();
   setupEvents();
   setupDragging();
@@ -2026,6 +2345,7 @@ async function init() {
       state.byEntity[name] = indexRows(rows);
     }
     populateEntities();
+    applyCheckpointScenario({ fertilityKey: DEFAULT_FERTILITY_SCENARIO, lifeKey: DEFAULT_LIFE_SCENARIO, updateFertility: true, updateLife: true });
     el.dataStatus.textContent = `${state.entities.length} places loaded.`;
     render();
     resetLayout();
