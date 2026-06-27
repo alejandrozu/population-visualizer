@@ -101,6 +101,7 @@ const state = {
 };
 
 const el = {
+  appShell: document.querySelector("#appShell"),
   dataStatus: document.querySelector("#dataStatus"),
   placeFlag: document.querySelector("#placeFlag"),
   entitySelect: document.querySelector("#entitySelect"),
@@ -134,7 +135,8 @@ const el = {
   updateCharts: document.querySelector("#updateCharts"),
   dynamicMode: document.querySelector("#dynamicMode"),
   resetLayout: document.querySelector("#resetLayout"),
-  exportScenario: document.querySelector("#exportScenario")
+  exportScenario: document.querySelector("#exportScenario"),
+  sidebarResize: document.querySelector("#sidebarResize")
 };
 
 function parseCsv(text) {
@@ -1406,7 +1408,16 @@ function renderHealthAge() {
   ], "LE-75 equivalent age");
 }
 
+function sortCheckpointsByYear() {
+  state.checkpoints.sort((a, b) => {
+    const yearA = Number.isFinite(Number(a.year)) ? Number(a.year) : Infinity;
+    const yearB = Number.isFinite(Number(b.year)) ? Number(b.year) : Infinity;
+    return yearA - yearB;
+  });
+}
+
 function setupCheckpoints() {
+  sortCheckpointsByYear();
   el.checkpointList.innerHTML = "";
   state.checkpoints
     .forEach((point, index) => {
@@ -1419,8 +1430,6 @@ function setupCheckpoints() {
         <label>Migration<input type="number" min="-50" max="50" step="0.1" value="${point.migration}" data-key="migration" data-index="${index}"></label>
         <label>Caution<input type="number" min="0" max="1" step="0.01" value="${point.caution ?? 0}" data-key="caution" data-index="${index}"></label>
         <div class="checkpoint-actions">
-          <button class="icon-button" title="Move checkpoint up" data-move="${index}" data-direction="-1"><i data-lucide="chevron-up"></i></button>
-          <button class="icon-button" title="Move checkpoint down" data-move="${index}" data-direction="1"><i data-lucide="chevron-down"></i></button>
           <button class="icon-button" title="Remove checkpoint" data-remove="${index}"><i data-lucide="trash-2"></i></button>
         </div>
       `;
@@ -1518,6 +1527,85 @@ function fitDashboardHeight() {
   el.dashboard.style.minHeight = `${Math.max(window.innerHeight - 28, bottom + 24)}px`;
 }
 
+function visiblePanels() {
+  return Array.from(document.querySelectorAll(".panel"))
+    .filter((panel) => getComputedStyle(panel).display !== "none");
+}
+
+function materializePanelTransform(panel) {
+  const x = parseFloat(panel.dataset.x) || 0;
+  const y = parseFloat(panel.dataset.y) || 0;
+  if (!x && !y) return;
+  panel.style.left = `${(parseFloat(panel.style.left) || 0) + x}px`;
+  panel.style.top = `${(parseFloat(panel.style.top) || 0) + y}px`;
+  panel.style.transform = "translate(0px, 0px)";
+  panel.dataset.x = "0";
+  panel.dataset.y = "0";
+}
+
+function panelBox(panel) {
+  const left = parseFloat(panel.style.left) || 0;
+  const top = parseFloat(panel.style.top) || 0;
+  const rect = panel.getBoundingClientRect();
+  return {
+    left,
+    top,
+    width: rect.width,
+    height: rect.height,
+    right: left + rect.width,
+    bottom: top + rect.height
+  };
+}
+
+function boxesOverlap(a, b, gap = 14) {
+  return a.left < b.right + gap
+    && a.right + gap > b.left
+    && a.top < b.bottom + gap
+    && a.bottom + gap > b.top;
+}
+
+function movePanelTo(panel, left, top) {
+  panel.style.left = `${Math.max(16, left)}px`;
+  panel.style.top = `${Math.max(16, top)}px`;
+  panel.style.transform = "translate(0px, 0px)";
+  panel.dataset.x = "0";
+  panel.dataset.y = "0";
+}
+
+function settlePanelLayout(activePanel = null) {
+  const gap = 16;
+  const panels = visiblePanels();
+  if (!panels.length) return;
+  panels.forEach(materializePanelTransform);
+  if (activePanel) movePanelTo(activePanel, panelBox(activePanel).left, panelBox(activePanel).top);
+
+  const ordered = panels
+    .filter((panel) => panel !== activePanel)
+    .sort((a, b) => panelBox(a).top - panelBox(b).top || panelBox(a).left - panelBox(b).left);
+  const placed = [];
+  if (activePanel && panels.includes(activePanel)) placed.push({ panel: activePanel, box: panelBox(activePanel) });
+
+  for (const panel of ordered) {
+    let box = panelBox(panel);
+    let guard = 0;
+    while (placed.some((item) => boxesOverlap(box, item.box, gap)) && guard < 100) {
+      const blockers = placed.filter((item) => boxesOverlap(box, item.box, gap));
+      box.top = Math.max(...blockers.map((item) => item.box.bottom + gap));
+      box.bottom = box.top + box.height;
+      guard += 1;
+    }
+    movePanelTo(panel, box.left, box.top);
+    placed.push({ panel, box: panelBox(panel) });
+  }
+
+  fitDashboardHeight();
+  setTimeout(() => {
+    document.querySelectorAll(".chart").forEach((chart) => {
+      if (chart.offsetParent) Plotly.Plots.resize(chart).catch(() => {});
+    });
+  }, 40);
+}
+
 function setupDragging() {
   interact(".panel")
     .draggable({
@@ -1531,6 +1619,9 @@ function setupDragging() {
           target.dataset.x = x;
           target.dataset.y = y;
           fitDashboardHeight();
+        },
+        end(event) {
+          settlePanelLayout(event.target);
         }
       }
     })
@@ -1551,12 +1642,67 @@ function setupDragging() {
           const chart = target.querySelector(".chart");
           if (chart?.offsetParent) Plotly.Plots.resize(chart).catch(() => {});
           fitDashboardHeight();
+        },
+        end(event) {
+          settlePanelLayout(event.target);
         }
       },
       modifiers: [
         interact.modifiers.restrictSize({ min: { width: 260, height: 172 } })
       ]
     });
+}
+
+function sidebarWidthBounds() {
+  const viewport = Math.max(window.innerWidth || 0, 980);
+  return {
+    min: 360,
+    max: Math.max(420, Math.min(720, Math.floor(viewport * 0.55)))
+  };
+}
+
+function setSidebarWidth(width, persist = true) {
+  if (!el.appShell) return;
+  const bounds = sidebarWidthBounds();
+  const next = clamp(Number(width) || 420, bounds.min, bounds.max);
+  el.appShell.style.setProperty("--sidebar-width", `${next}px`);
+  state.sidebarWidth = next;
+  if (persist) localStorage.setItem("populationVisualizer.sidebarWidth", String(next));
+}
+
+function setupSidebarResize() {
+  if (!el.sidebarResize || !el.appShell) return;
+  const saved = Number(localStorage.getItem("populationVisualizer.sidebarWidth"));
+  if (Number.isFinite(saved)) setSidebarWidth(saved, false);
+
+  let startX = 0;
+  let startWidth = state.sidebarWidth || 420;
+
+  el.sidebarResize.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    startX = event.clientX;
+    startWidth = state.sidebarWidth || 420;
+    el.sidebarResize.setPointerCapture(event.pointerId);
+    document.body.classList.add("resizing-sidebar");
+  });
+
+  el.sidebarResize.addEventListener("pointermove", (event) => {
+    if (!el.sidebarResize.hasPointerCapture(event.pointerId)) return;
+    setSidebarWidth(startWidth + event.clientX - startX);
+    fitDashboardHeight();
+    document.querySelectorAll(".chart").forEach((chart) => {
+      if (chart.offsetParent) Plotly.Plots.resize(chart).catch(() => {});
+    });
+  });
+
+  const finishResize = (event) => {
+    if (!el.sidebarResize.hasPointerCapture(event.pointerId)) return;
+    el.sidebarResize.releasePointerCapture(event.pointerId);
+    document.body.classList.remove("resizing-sidebar");
+    settlePanelLayout();
+  };
+  el.sidebarResize.addEventListener("pointerup", finishResize);
+  el.sidebarResize.addEventListener("pointercancel", finishResize);
 }
 
 function setupEvents() {
@@ -1602,6 +1748,7 @@ function setupEvents() {
       migration: last.migration,
       caution: last.caution ?? 0
     });
+    sortCheckpointsByYear();
     setupCheckpoints();
     scheduleRender();
   });
@@ -1611,26 +1758,28 @@ function setupEvents() {
     if (!input) return;
     const index = Number(input.dataset.index);
     const key = input.dataset.key;
+    if (!state.checkpoints[index]) return;
     state.checkpoints[index][key] = Number(input.value);
     scheduleRender();
   });
 
+  el.checkpointList.addEventListener("change", (event) => {
+    const input = event.target.closest("input[data-key]");
+    if (!input) return;
+    const index = Number(input.dataset.index);
+    const key = input.dataset.key;
+    if (!state.checkpoints[index]) return;
+    state.checkpoints[index][key] = Number(input.value);
+    sortCheckpointsByYear();
+    setupCheckpoints();
+    scheduleRender();
+  });
+
   el.checkpointList.addEventListener("click", (event) => {
-    const moveButton = event.target.closest("button[data-move]");
-    if (moveButton) {
-      const index = Number(moveButton.dataset.move);
-      const direction = Number(moveButton.dataset.direction);
-      const nextIndex = index + direction;
-      if (nextIndex < 0 || nextIndex >= state.checkpoints.length) return;
-      const [checkpoint] = state.checkpoints.splice(index, 1);
-      state.checkpoints.splice(nextIndex, 0, checkpoint);
-      setupCheckpoints();
-      scheduleRender();
-      return;
-    }
     const button = event.target.closest("button[data-remove]");
     if (!button || state.checkpoints.length <= 2) return;
     state.checkpoints.splice(Number(button.dataset.remove), 1);
+    sortCheckpointsByYear();
     setupCheckpoints();
     scheduleRender();
   });
@@ -1688,6 +1837,7 @@ function setupEvents() {
   window.addEventListener("resize", () => {
     window.clearTimeout(state.resizeTimer);
     state.resizeTimer = window.setTimeout(() => {
+      if (state.sidebarWidth) setSidebarWidth(state.sidebarWidth, false);
       resetLayout();
       document.querySelectorAll(".chart").forEach((chart) => {
         if (chart.offsetParent) Plotly.Plots.resize(chart).catch(() => {});
@@ -1722,6 +1872,8 @@ function resetAll() {
   [el.zeroPopulation, el.zeroVitals, el.zeroFertility, el.zeroLife, el.zeroAbsoluteGrowth, el.zeroMigrationAbsolute, el.zeroMigrationRate]
     .forEach((input) => { if (input) input.checked = false; });
   if (el.zeroAgePercentile) el.zeroAgePercentile.checked = true;
+  localStorage.removeItem("populationVisualizer.sidebarWidth");
+  setSidebarWidth(420, false);
   setupCheckpoints();
   setPanelPreset([...state.activePanels]);
   resetLayout();
@@ -1854,6 +2006,7 @@ async function init() {
   renderPanelToggles();
   setupEvents();
   setupDragging();
+  setupSidebarResize();
   lucide.createIcons();
 
   try {
