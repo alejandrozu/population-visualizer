@@ -121,12 +121,16 @@ const state = {
     { type: "le", value: 75 },
     { type: "year", value: START_SIM_YEAR }
   ],
+  simulatorLayoutPending: false,
   scenario: [],
   historical: []
 };
 
 const el = {
   appShell: document.querySelector("#appShell"),
+  explanationView: document.querySelector("#explanationView"),
+  showSimulator: document.querySelector("#showSimulator"),
+  showExplanation: document.querySelector("#showExplanation"),
   dataStatus: document.querySelector("#dataStatus"),
   placeFlag: document.querySelector("#placeFlag"),
   entitySelect: document.querySelector("#entitySelect"),
@@ -173,6 +177,62 @@ const el = {
   dynamicPyramidAge: document.querySelector("#dynamicPyramidAge"),
   dynamicFeelPyramidAge: document.querySelector("#dynamicFeelPyramidAge")
 };
+
+function primaryViewFromHash() {
+  const hash = window.location.hash || "";
+  return hash === "#explanation" || hash.startsWith("#guide-") ? "explanation" : "simulator";
+}
+
+function setPrimaryView(view, { scrollToTop = false } = {}) {
+  const showExplanation = view === "explanation";
+  if (el.appShell) el.appShell.hidden = showExplanation;
+  if (el.explanationView) el.explanationView.hidden = !showExplanation;
+  document.body.classList.toggle("explanation-open", showExplanation);
+  el.showSimulator?.classList.toggle("active", !showExplanation);
+  el.showExplanation?.classList.toggle("active", showExplanation);
+  el.showSimulator?.setAttribute("aria-selected", String(!showExplanation));
+  el.showExplanation?.setAttribute("aria-selected", String(showExplanation));
+
+  if (showExplanation) {
+    if (scrollToTop) el.explanationView?.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    if (state.simulatorLayoutPending) {
+      resetLayout();
+      state.simulatorLayoutPending = false;
+    } else {
+      fitDashboardHeight();
+    }
+    document.querySelectorAll(".chart").forEach((chart) => {
+      if (chart.offsetParent) Plotly.Plots.resize(chart).catch(() => {});
+    });
+  });
+}
+
+function navigatePrimaryView(view) {
+  const hash = view === "explanation" ? "#explanation" : "#simulator";
+  if (window.location.hash !== hash) window.history.pushState(null, "", hash);
+  setPrimaryView(view, { scrollToTop: true });
+}
+
+function setupPrimaryViews() {
+  el.showSimulator?.addEventListener("click", () => navigatePrimaryView("simulator"));
+  el.showExplanation?.addEventListener("click", () => navigatePrimaryView("explanation"));
+  document.querySelectorAll("[data-open-simulator]").forEach((button) => {
+    button.addEventListener("click", () => navigatePrimaryView("simulator"));
+  });
+  window.addEventListener("hashchange", () => {
+    const view = primaryViewFromHash();
+    setPrimaryView(view);
+    if (view === "explanation" && window.location.hash.startsWith("#guide-")) {
+      window.requestAnimationFrame(() => document.querySelector(window.location.hash)?.scrollIntoView({ block: "start" }));
+    }
+  });
+  window.addEventListener("popstate", () => setPrimaryView(primaryViewFromHash()));
+  setPrimaryView(primaryViewFromHash());
+}
 
 function parseCsv(text) {
   const rows = [];
@@ -2201,6 +2261,10 @@ function setupEvents() {
   window.addEventListener("resize", () => {
     window.clearTimeout(state.resizeTimer);
     state.resizeTimer = window.setTimeout(() => {
+      if (el.appShell?.hidden) {
+        state.simulatorLayoutPending = true;
+        return;
+      }
       if (state.sidebarWidth) setSidebarWidth(state.sidebarWidth, false);
       resetLayout();
       document.querySelectorAll(".chart").forEach((chart) => {
@@ -2387,6 +2451,7 @@ function populateEntities() {
 }
 
 async function init() {
+  setupPrimaryViews();
   setupCheckpoints();
   renderScenarioButtons();
   renderPanelToggles();
@@ -2406,7 +2471,8 @@ async function init() {
     applyCheckpointScenario({ fertilityKey: DEFAULT_FERTILITY_SCENARIO, lifeKey: DEFAULT_LIFE_SCENARIO, updateFertility: true, updateLife: true });
     el.dataStatus.textContent = `${state.entities.length} places loaded.`;
     render();
-    resetLayout();
+    if (el.appShell?.hidden) state.simulatorLayoutPending = true;
+    else resetLayout();
   } catch (error) {
     console.error(error);
     el.dataStatus.textContent = "Could not load one or more data sources.";
