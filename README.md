@@ -6,13 +6,14 @@ http://127.0.0.1:8766/index.html
 
 ## What it does
 
+- Provides two top-level views: the interactive Simulator and a comprehensive Explanation covering purpose, methodology, original concepts, panel interpretation, sources, and limitations. The explanation can be linked directly with `#explanation`.
 - Loads public demographic CSVs live from Our World in Data grapher endpoints.
 - Covers world, regions, and countries where the source series exist.
 - Uses historical estimates through 2022. Years 2023 onward are treated as simulation/projection years because recent source columns are inconsistent across places.
 - Computes births, deaths, TFR, modeled under-15-survival-adjusted TFR, population, percentage growth, absolute growth, absolute migration, migration per mille, life expectancy, selected age share, median/percentile age, health-adjusted percentile age, a normal population pyramid, and a feel-age comparison pyramid.
 - Simulates from 2022 onward with editable and reorderable checkpoints for TFR, life expectancy, net migration per mille, and a caution factor that subtracts deaths per 1,000 from the mortality curve.
 - Uses the actual 2022 value as the baseline for forward interpolation, then interpolates toward later checkpoints.
-- Default history range is 1950-2022. Default simulation range is 2022-2100.
+- Default displayed range is 1950-2100, with 2022 as the historical anchor and 2023 onward simulated.
 - Age/mortality arrays are finite-capped at 500. Pyramid displays use the age where mortality reaches 990 per 1,000 when it occurs earlier.
 - Mortality curves start with LE 75 and the selected comparison year. Additional year or life-expectancy curves can be added inside the mortality panel, up to 10 total.
 - The 2022 simulation handoff is anchored to observed births, deaths, TFR, and life expectancy before simulated years continue forward.
