@@ -1,12 +1,17 @@
 # Population Scenario Visualizer
 
-Open `index.html` through a local web server. The current Codex server URL is:
+Live at https://alejandrozu.github.io/population-visualizer/ (the guide is at `#explanation`).
 
-http://127.0.0.1:8766/index.html
+To run it locally, serve the folder with any static web server, for example `python -m http.server 8766`, and open http://127.0.0.1:8766/index.html.
+
+The project explores two claims about population under longevity escape velocity (LEV):
+
+1. With fertility below replacement, population approaches a ceiling a small multiple of today's, even if nobody ever dies. Fertility sets the height of the ceiling; longevity decides whether there is a ceiling or a decline.
+2. Under LEV, a population with a very high median age is not old in health terms. The feel-age measures make this visible.
 
 ## What it does
 
-- Provides two top-level views: the interactive Simulator and a comprehensive Explanation covering purpose, methodology, original concepts, panel interpretation, sources, and limitations. The explanation can be linked directly with `#explanation`.
+- Provides two top-level views: the interactive Simulator and an Explanation that sets out the argument, the rationale for every lever and preset, the methodology, the original concepts (feel age, survival-adjusted TFR, caution), sources and limitations. The explanation can be linked directly with `#explanation`.
 - Loads public demographic CSVs live from Our World in Data grapher endpoints.
 - Covers world, regions, and countries where the source series exist.
 - Uses historical estimates through 2022. Years 2023 onward are treated as simulation/projection years because recent source columns are inconsistent across places.
@@ -23,7 +28,8 @@ http://127.0.0.1:8766/index.html
 - The feel-age comparison pyramid scales each half independently while keeping hover values in real people counts.
 - Population pyramid panels accept historical years before 2022 and use horizontal age hover behavior.
 - Default panels show population, births/deaths, TFR, life expectancy, growth rate, mortality, and median/percentile age; migration, absolute growth, pyramids, age share, and health/feel age start hidden.
-- Supports staged editing with `Dynamic` off and manual recomputation with `Update`.
+- Supports staged editing with `Dynamic` off and manual recomputation with `Update`. Chart-only settings (Y starts at 0, pyramid year and height, age-share range, percentile, mortality curves) redraw only their own panel and apply immediately.
+- The Simulation tab shows 1950-2100; the History tab shows only the observed record, 1950-2022. Switching tabs keeps the panel layout.
 - Reset restores the default place, ranges, checkpoints, panels, panel controls, and curve selections. Export downloads the current scenario as JSON.
 - Export also copies the scenario JSON to the clipboard when the browser blocks direct downloads.
 - Major line charts include an optional `Y starts at 0` checkbox inside the panel.
@@ -39,4 +45,13 @@ http://127.0.0.1:8766/index.html
 - World historical migration is forced to zero. Forward world migration remains adjustable for hypothetical scenarios.
 - Five-year age groups are smoothed into single-year ages with interpolation before pyramid rendering.
 - Mortality curves beyond observed modern life expectancies are extrapolations. They are useful for scenario exploration, not forecasts.
-- The low-estimate switch chooses the lowest available machine-readable source among loaded birth and fertility series. It does not scrape Wikipedia tables automatically.
+- Where two loaded birth or fertility series disagree, the lower is used, because UN estimates have tended to run above registered counts. It does not scrape Wikipedia tables automatically.
+- LEV presets keep their stated annual gain until the model ceiling of life expectancy 500 and add a checkpoint in the year it is reached.
+
+## Performance notes
+
+- Historical getters are memoized per place and year, and interpolation uses sorted per-series indexes instead of re-sorting rows on every lookup.
+- Mortality curves are fitted with a precomputed Gompertz age factor, and feel-age maps are computed once per life expectancy.
+- The forward simulation is cached per place and checkpoint set and extended on demand (for example, for a pyramid year beyond the chart window).
+- Three datasets that were downloaded but never used (under-15 mortality, death rates by age, growth rate; about 2.9 MB) are no longer loaded.
+- Renders are coalesced into one animation frame, typing is debounced, and color-banded lines use one Plotly trace per color instead of one per year.

@@ -1230,7 +1230,7 @@ button:focus-visible {
 
 .source-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 28px;
   margin: 30px 0;
 }
@@ -1484,4 +1484,141 @@ button:focus-visible {
   .model-equation b {
     line-height: 1;
   }
+}
+
+/* Guide chart: the population ceiling */
+.guide-figure {
+  margin: 26px 0 22px;
+  padding: 18px 18px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fcfcfb;
+}
+
+.guide-figure figcaption {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.guide-figure figcaption strong {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.guide-figure figcaption span {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.guide-chart {
+  position: relative;
+  min-height: 300px;
+}
+
+.guide-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 6px;
+  color: #3f494f;
+  font-size: 12px;
+}
+
+.guide-chart-legend span,
+.guide-chart-tip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.guide-chart-legend i,
+.guide-chart-tip i {
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.guide-chart-svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.guide-chart-grid line {
+  stroke: #ebe8e0;
+  stroke-width: 1;
+}
+
+.guide-chart-grid line.axis {
+  stroke: #c9c5ba;
+}
+
+.guide-chart-grid text,
+.guide-chart-note,
+.guide-chart-label {
+  fill: #5d676d;
+  font-size: 11px;
+}
+
+.guide-chart-label {
+  fill: #30383c;
+  font-weight: 700;
+}
+
+.guide-chart-today {
+  stroke: #8d969b;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.guide-chart-cross {
+  stroke: #8d969b;
+  stroke-width: 1;
+}
+
+.guide-chart-svg rect:focus {
+  outline: none;
+}
+
+.guide-chart-svg rect:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.guide-chart-tip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  min-width: 170px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(42, 42, 35, 0.14);
+  pointer-events: none;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.guide-chart-tip strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.guide-chart-tip b {
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.guide-article h3 + p {
+  margin-top: 0;
+}
+
+.guide-section h3:not(:first-child) {
+  margin-top: 26px;
 }

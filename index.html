@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Population Scenario Visualizer</title>
-    <link rel="stylesheet" href="./styles.css?v=36" />
+    <link rel="stylesheet" href="./styles.css?v=37" />
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
   </head>
   <body>
     <header class="site-nav">
@@ -40,8 +40,8 @@
 
         <section class="control-block">
           <div class="mode-row" role="tablist" aria-label="Mode">
-            <button class="tab active" data-mode="history">History</button>
-            <button class="tab" data-mode="simulation">Simulation</button>
+            <button class="tab" data-mode="history" title="Observed record only, 1950-2022">History</button>
+            <button class="tab active" data-mode="simulation" title="Observed record plus the simulated future, 1950-2100">Simulation</button>
           </div>
           <div class="action-grid">
             <button id="updateCharts" class="text-button primary"><i data-lucide="refresh-cw"></i><span>Update</span></button>
@@ -214,13 +214,18 @@
           <div class="guide-nav-inner">
             <p class="guide-nav-label">In this guide</p>
             <nav class="guide-nav-links">
-              <a href="#guide-purpose">Purpose</a>
+              <a href="#guide-purpose">The argument</a>
+              <a href="#guide-ceiling">The population ceiling</a>
+              <a href="#guide-feel">Old is not frail</a>
               <a href="#guide-start">Start here</a>
-              <a href="#guide-history">Historical foundation</a>
+              <a href="#guide-fertility">Fertility presets</a>
+              <a href="#guide-longevity">Longevity presets</a>
+              <a href="#guide-caution">Caution and migration</a>
+              <a href="#guide-checkpoints">Checkpoints</a>
+              <a href="#guide-history">Historical data</a>
               <a href="#guide-engine">Simulation engine</a>
-              <a href="#guide-fertility">Fertility</a>
-              <a href="#guide-mortality">Mortality and longevity</a>
-              <a href="#guide-new-concepts">New concepts</a>
+              <a href="#guide-mortality">Mortality curves</a>
+              <a href="#guide-adjusted">Survival-adjusted TFR</a>
               <a href="#guide-panels">Reading the panels</a>
               <a href="#guide-geography">Places and regions</a>
               <a href="#guide-limits">Limits</a>
@@ -235,248 +240,269 @@
 
         <article class="guide-article">
           <header class="guide-hero" id="guide-purpose">
-            <p class="guide-eyebrow">Methodology, concepts, and reading guide</p>
-            <h1>How the Population Visualizer works</h1>
-            <p class="guide-deck">Population is not a single line moving through time. It is a living stock shaped by births, deaths, migration, and the age structure inherited from every earlier year. This visualizer makes those moving parts visible, then lets you change their assumptions and follow the consequences.</p>
-            <div class="guide-summary" aria-label="Model summary">
-              <div><span>Historical anchor</span><strong>2022</strong><p>Later years are simulated so inconsistent 2023-2025 source series are not mixed into the baseline.</p></div>
-              <div><span>Core engine</span><strong>One-year cohorts</strong><p>People age, die, migrate, and give rise to new cohorts one simulated year at a time.</p></div>
-              <div><span>Proper use</span><strong>Explore assumptions</strong><p>The result is a transparent scenario, not a claim about what must happen.</p></div>
+            <p class="guide-eyebrow">Population, fertility and longevity escape velocity</p>
+            <h1>Ending aging would not make the world fill up</h1>
+            <p class="guide-deck">The usual objection to curing aging is that the planet would overflow. The arithmetic says otherwise. Deaths only decide how long people stay; births decide how many people ever arrive. With fertility well below two children per woman, even a world in which nobody dies settles toward a ceiling of roughly one and a half to three times today's population, and then stops. This visualizer is built to let you check that claim, and a second one that follows from it: once longevity escape velocity is reached, a population with a very high median age is not an old population in any sense that matters.</p>
+            <div class="guide-summary" aria-label="Key results">
+              <div><span>Nobody dies, TFR 1.5</span><strong>About 20 billion, then flat</strong><p>Today's 8 billion grows about 2.5 times and stops, because every generation of births is smaller than the one before.</p></div>
+              <div><span>Default scenario, 2100</span><strong>Median age 74, feel age 24</strong><p>Under Medium LEV the typical person is old by the calendar and young by the mortality curve.</p></div>
+              <div><span>What sets the ceiling</span><strong>Fertility, not longevity</strong><p>Going from Slow to Fast LEV moves the 2400 population by about 1.3 billion. Changing the fertility preset moves it by tens of billions.</p></div>
             </div>
           </header>
 
-          <section class="guide-section">
-            <h2>Why this exists</h2>
-            <p>Population discussions often hide the mechanism. A total may keep growing after fertility falls, deaths may rise while health improves, and a small migration rate may become a large absolute flow. These are not contradictions. They are consequences of age structure, scale, and timing.</p>
-            <p>The visualizer is built for demographic literacy: to show why population momentum matters, why births and TFR are different quantities, why life expectancy is a summary of an entire mortality schedule, and why the same population total can conceal radically different futures.</p>
-            <div class="guide-callout">
-              <strong>The governing question is: "What follows if these assumptions hold?"</strong>
-              <p>Use the simulator to compare internally consistent worlds. Do not read any single path as a forecast, promise, or policy recommendation.</p>
-            </div>
+          <section class="guide-section" id="guide-ceiling">
+            <p class="guide-eyebrow">Idea one</p>
+            <h2>Population approaches a ceiling, even if nobody ever dies</h2>
             <div class="model-equation" aria-label="Population accounting identity">
               <span>Population next year</span><b>=</b><span>Population this year</span><b>+</b><span>Births</span><b>-</b><span>Deaths</span><b>+</b><span>Net migration</span>
             </div>
+            <p>Longevity escape velocity attacks one term of this identity: deaths. It does nothing directly to births. In the limit where nobody dies, the world's population is simply today's population plus everyone born from now on, and the question becomes whether that total keeps growing or converges.</p>
+            <p>It converges whenever fertility is below replacement. With no deaths before the end of the childbearing years, replacement in this model is exactly two children per woman: one daughter to replace each mother. At a total fertility rate <em>T</em>, each generation of births is <em>T</em>/2 the size of the generation that produced it. If <em>B</em> is the number of people born in the next generation, the births still to come form a geometric series, <em>B</em>(1 + <em>T</em>/2 + (<em>T</em>/2)<sup>2</sup> + ...) = <em>B</em> / (1 - <em>T</em>/2). For any <em>T</em> below 2 that sum is finite. The population climbs, slows and flattens at the people alive today plus that sum.</p>
+            <figure class="guide-figure" id="ceilingFigure" aria-labelledby="ceilingFigureTitle">
+              <figcaption>
+                <strong id="ceilingFigureTitle">World population if nobody dies after 2022, by fertility level</strong>
+                <span>Billions. Simulated from the observed 2022 world with life expectancy 500 and caution 1 from 2023, fertility held at each level from 2023, no migration.</span>
+              </figcaption>
+              <div class="guide-chart" data-ceiling-chart role="img" aria-label="Line chart: with fertility of 0.9, 1.0 and 1.5 the population flattens at about 11, 12 and 20 billion; at 1.8 it is still rising past 33 billion in 2400; at 2.0 it grows without limit."></div>
+            </figure>
+            <div class="table-wrap">
+              <table class="guide-table compact-table">
+                <thead><tr><th>Fertility (TFR)</th><th>2100</th><th>2400</th><th>What happens</th></tr></thead>
+                <tbody>
+                  <tr><td>0.9</td><td>10.8 billion</td><td>11.3 billion</td><td>Flat by about 2200, at 1.4 times today.</td></tr>
+                  <tr><td>1.0</td><td>11.3 billion</td><td>12.0 billion</td><td>Flat by about 2250, at 1.5 times today.</td></tr>
+                  <tr><td>1.5</td><td>14.1 billion</td><td>19.4 billion</td><td>Still creeping up in 2400 toward a ceiling near 20 billion, 2.5 times today.</td></tr>
+                  <tr><td>Recent trend (2.0 in 2030, 1.5 by 2100)</td><td>15.6 billion</td><td>22.4 billion</td><td>Ceiling near 23 billion, about 2.8 times today.</td></tr>
+                  <tr><td>1.8</td><td>16.2 billion</td><td>33.4 billion</td><td>Converges too, but slowly and high: about 42 billion.</td></tr>
+                  <tr><td>2.0</td><td>17.9 billion</td><td>55.6 billion</td><td>No ceiling: a steady 125 million extra people every year, forever.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="guide-callout">
+              <strong>Longevity decides whether there is a ceiling. Fertility decides where it is.</strong>
+              <p>With today's mortality frozen (the Halt preset), the default fertility path peaks at 9.1 billion in 2049 and falls to about 2 billion by 2200. That is the familiar story of population decline. Medium LEV turns the decline into a plateau, but the height of the plateau barely depends on how fast longevity improves: with Recent trend fertility, Slow, Medium and Fast LEV give 19.2, 19.8 and 20.6 billion in 2400.</p>
+            </div>
+            <p>The claim has a boundary, and the simulator shows it as readily as the claim itself. The ceiling is low because fertility is low. At replacement-level fertility, abolishing aging does produce open-ended growth: 2.1 forever with Medium LEV passes 30 billion by 2200 and approaches 70 billion by 2400. If fertility settles between about 1 and 1.6 children per woman, as the Recent trend, Floor of 1 and No social rules presets assume, the ceiling sits at 1.5 to 3 times today's population.</p>
+          </section>
+
+          <section class="guide-section" id="guide-feel">
+            <p class="guide-eyebrow">Idea two</p>
+            <h2>Under longevity escape velocity, old is not frail</h2>
+            <p>An aging population is normally read as a frail one: more people at ages where disease and death are concentrated. That reading assumes the mortality curve stays where it is while people move along it. Longevity escape velocity is precisely the claim that the curve moves to the right faster than people travel along it, so the calendar stops being a good measure of how old anyone is.</p>
+            <p>The visualizer measures this with <strong>feel age</strong> (mortality-equivalent age), which compares risks of dying from disease only. For any life expectancy <em>L</em>, the model builds a disease-only curve: the mortality schedule a population would have if disease were the only cause of death and its life expectancy were <em>L</em>. Someone's feel age is the age on the <em>L</em> = 75 version of that curve with the same annual risk as theirs. With life expectancy 85, a 78-year-old has the disease mortality of a 68-year-old on the 75 curve, so their feel age is about 68. People under 20 keep their actual age.</p>
+            <div class="mortality-pair">
+              <div><strong>Default scenario (Medium LEV)</strong><p>World median age rises from 31 in 2022 to 41 in 2050 and 74 in 2100. Median feel age goes the other way: 33.5, then 27, then 24.</p></div>
+              <div><strong>Halt preset</strong><p>The two measures move together: in 2100 the median age is 50 and the median feel age 53. This is aging in the familiar sense, and it is the only case the "aging crisis" framing describes.</p></div>
+            </div>
+            <p>Feel age is computed on disease-only curves, not the generalized ones. Accidents, violence and early-life deaths are not aging, and counting them would make a reckless 25-year-old look biologically older than a careful 60-year-old.</p>
+            <div class="guide-note">
+              <strong>The scale has a floor at 20.</strong>
+              <p>Feel age is only defined from age 20, the youngest adult age on the baseline curve. When longevity is strong enough that most adults have lower disease mortality than a 20-year-old in the life-expectancy-75 world, they cannot be mapped any younger. Instead of piling them all at 20, the model spreads them over ages 20 to 40 with a five-year half-life (20 is twice as likely as 25, 25 twice as likely as 30). A median feel age of 24 to 25 therefore means "as young as this scale can express," not a precise measurement.</p>
+            </div>
+            <p>Three panels show this: the feel line in Median / Percentile Age, which is on by default, and two panels to switch on under Panels: the Feel-Age Comparison pyramid (actual ages on the left, feel ages on the right) and Health / Feel Age, which maps every actual age to its feel age for any life expectancy you choose.</p>
           </section>
 
           <section class="guide-section" id="guide-start">
             <p class="guide-eyebrow">A short orientation</p>
             <h2>Start here</h2>
             <ol class="guide-steps">
-              <li><strong>Choose a place and time window.</strong> World, continents, selected regions, and countries are available. The default view spans 1950-2100 so the historical handoff and simulated future can be seen together.</li>
-              <li><strong>Begin with a preset.</strong> Fertility and life-expectancy presets alter only their own checkpoint values. Migration and caution remain as you set them.</li>
-              <li><strong>Edit the checkpoints.</strong> Each line is a year with TFR, life expectancy, migration per 1,000 people, and caution. Values are linearly interpolated from the observed 2022 baseline.</li>
-              <li><strong>Choose how changes apply.</strong> Dynamic mode recomputes as you edit. Turn it off to stage several changes and press Update once.</li>
-              <li><strong>Read more than one panel.</strong> A population total makes more sense beside births, deaths, age structure, and absolute growth.</li>
+              <li><strong>Choose a place and a time window.</strong> World, continents, regions and countries are available. The Simulation tab shows 1950 to 2100, the observed record joined to the simulated future; History shows only the record up to 2022. Longer windows, back into the long-run reconstruction or forward to 2400, can be typed in.</li>
+              <li><strong>Pick a fertility preset and a longevity preset.</strong> Each preset writes its own column of the checkpoints and leaves the others alone. The default pair is Recent trend and Medium LEV.</li>
+              <li><strong>Adjust the checkpoints.</strong> Each row is a year with a TFR, a life expectancy, a migration rate and a caution value. Each path runs in straight lines through the checkpoints and holds the last value afterward. TFR and life expectancy start from their observed 2022 values, migration and caution from zero.</li>
+              <li><strong>Choose how edits apply.</strong> With Dynamic on, charts follow every edit. Turn it off to stage several changes and apply them together with Update. Chart-only settings, such as "Y starts at 0" or a pyramid's year, always apply at once.</li>
+              <li><strong>Read the panels together.</strong> Total Population makes sense next to Births and Deaths, the pyramids and the feel-age panels.</li>
             </ol>
             <div class="question-table-wrap">
               <table class="guide-table">
-                <thead><tr><th>Question</th><th>Change</th><th>Panels to compare</th></tr></thead>
+                <thead><tr><th>Question</th><th>What to change</th><th>Panels to watch</th></tr></thead>
                 <tbody>
-                  <tr><td>Why can population grow below replacement fertility?</td><td>Lower TFR while holding longevity and migration still.</td><td>TFR, Births and Deaths, Population Pyramid, Total Population</td></tr>
-                  <tr><td>What does radical longevity change first?</td><td>Compare Halt with Medium or Fast LEV.</td><td>Death Curve, Median Age, Age Share, Absolute Growth</td></tr>
-                  <tr><td>Can migration offset natural decline?</td><td>Increase migration per mille gradually.</td><td>Net Migration, Migration Per Mille, Births and Deaths, Total Population</td></tr>
+                  <tr><td>Would curing aging overpopulate the world?</td><td>Fast LEV with each fertility preset in turn, end year 2400.</td><td>Total Population, Births and Deaths, Absolute Growth</td></tr>
+                  <tr><td>Is an old population a frail one?</td><td>Compare Halt with Medium LEV; switch on the two feel-age panels.</td><td>Median / Percentile Age, Feel-Age Comparison, Health / Feel Age</td></tr>
+                  <tr><td>Why does population keep growing below replacement?</td><td>Lower TFR while holding longevity and migration still.</td><td>TFR, Births and Deaths, Population Pyramid</td></tr>
+                  <tr><td>What happens once aging deaths are gone?</td><td>Medium LEV, then raise caution from 0 to 1.</td><td>Death Curve, Births and Deaths, Total Population</td></tr>
+                  <tr><td>Can migration offset natural decline in one country?</td><td>Raise migration per mille step by step.</td><td>Net Migration, Migration Per Mille, Total Population</td></tr>
                 </tbody>
               </table>
             </div>
+          </section>
+
+          <section class="guide-section" id="guide-fertility">
+            <p class="guide-eyebrow">Births are the engine</p>
+            <h2>The fertility presets, and why each one is there</h2>
+            <p>The total fertility rate (TFR) is a period measure: the number of children a woman would have if she lived through that year's age-specific birth rates. It is not the number of births. Births also depend on how many people are at childbearing ages, which is why a large young generation produces many births even at low fertility. This is population momentum, and it is why every preset keeps the population growing for decades after fertility falls.</p>
+            <p>Replacement depends on survival. The familiar 2.1 is replacement only when a small share of children die before they have children of their own. With today's world mortality frozen, 2.1 is slightly <em>below</em> replacement and the population eventually shrinks; with no deaths before 50 the bar falls to 2.0.</p>
+            <dl class="decision-list">
+              <div><dt>2.1 forever</dt><dd><strong>2.1 from 2030 onward.</strong> The textbook replacement level, included as a benchmark and as a demonstration that "replacement" is a statement about survival as much as about fertility: under Halt it slowly shrinks the world, under any LEV preset it grows it without limit.</dd></div>
+              <div><dt>UN median</dt><dd><strong>2.1 in 2030, 2.0 in 2050, 1.8 in 2100 and after.</strong> A simplified version of the UN's medium projection, which puts world fertility at 2.25 in 2024, just under 2.1 around 2050 and about 1.84 in 2100, with population peaking near 10.3 billion in the mid-2080s. The preset reaches 2.1 earlier than the UN does but ends at the same level. It stands for the official outlook, which the next preset argues is too high.</dd></div>
+              <div><dt>Recent trend</dt><dd><strong>2.0 in 2030, 1.75 in 2040, 1.6 in 2050, 1.5 in 2100.</strong> The default. Official projections have kept assuming that low fertility will level off or recover, and recent data keep coming in below them; the UN's 2024 revision lowered its outlook partly because fertility in large countries such as China turned out lower than expected. This path extends the decline at the pace actually observed. It ends close to the independent IHME forecast published in <em>The Lancet</em> in 2024, which has 1.59 in 2100, and it sits at the low end of that forecast's range for 2050 (1.83, interval 1.59 to 2.08). It is the default because recent data support it best, not because it is the most dramatic.</dd></div>
+              <div><dt>Floor of 1</dt><dd><strong>2.0 in 2030, 1.75 in 2040, 1.5 in 2050, 1.0 from 2070.</strong> Today's lowest-fertility societies become the global norm, but fertility stops falling at about one child per woman, on the view that most people still want a child even when they no longer want several.</dd></div>
+              <div><dt>No social rules</dt><dd><strong>2.0 in 2030, 1.9 in 2035, 1.6 in 2040, 1.2 in 2050, 0.9 from 2070.</strong> What fertility looks like once the social expectations that push people toward parenthood disappear: family pressure, religious norms, the assumption that adults have children. Having children becomes a purely personal preference. Where those expectations have eroded fastest, fertility is already below one child per woman: South Korea's TFR was 0.72 in 2023 and 0.80 in 2025, Taiwan's about 0.7 in 2025, and IHME's forecast keeps both near 0.8 to 0.9 for the rest of the century. The preset settles at 0.9.</dd></div>
+            </dl>
+            <p>Presets are starting points. Selecting one writes the checkpoint years it needs and leaves life expectancy, migration and caution untouched; every number can then be edited. The fertility presets are paths for the world as a whole and are applied unchanged to any place, so a country far from the world average (South Korea at 0.78 in 2022, Niger near 6) jumps toward them; for a single country, edit the TFR column directly.</p>
+          </section>
+
+          <section class="guide-section" id="guide-longevity">
+            <p class="guide-eyebrow">Deaths decide how long people stay</p>
+            <h2>The longevity presets and longevity escape velocity</h2>
+            <p><strong>Longevity escape velocity (LEV)</strong> is the point at which medicine adds life expectancy faster than time uses it up, so that people's remaining life expectancy grows as they age instead of shrinking. Aubrey de Grey gave the idea its standard formulation in 2004, as "actuarial escape velocity": mortality rates falling fast enough that "remaining (not merely total) life expectancy increases with time." In the visualizer it appears as period life expectancy rising by more than one year per calendar year, the usual working proxy for that condition. LEV is treated here as a serious possibility, and the question asked about it is quantitative: if it happens, on what schedule, and with what consequences for population and age?</p>
+            <p>The Life Expectancy panel colors its line by the annual gain, so the threshold is visible directly: cyan marks gains of 0.8 to 1.2 years per year, around escape velocity, and the two blues anything faster.</p>
+            <dl class="decision-list">
+              <div><dt>Halt</dt><dd><strong>Life expectancy frozen at its 2022 value.</strong> The counterfactual of no further progress. Combined with low fertility it produces an early peak and a long decline, and it is the baseline the other presets are measured against.</dd></div>
+              <div><dt>0.25 forever</dt><dd><strong>A quarter of a year of life expectancy per calendar year, indefinitely.</strong> The longest-running trend in demography: female life expectancy in the record-holding country rose "for 160 years at a steady pace of almost 3 months per year" (Oeppen and Vaupel, 2002). This is more of the same, with no acceleration.</dd></div>
+              <div><dt>Approaching 95</dt><dd><strong>0.25 per year up to 85, then 0.1 per year up to 95, then no further gains.</strong> The limits view: progress slows as populations approach a biological ceiling. Olshansky and colleagues argued in 2024 that gains have slowed since 1990 and that radical life extension is implausible this century unless biological aging itself can be slowed, which is precisely the condition the LEV presets assume is met.</dd></div>
+              <div><dt>Slow LEV</dt><dd><strong>Annual gains of 0.25 to 2030, 0.4 to 2035, 0.8 to 2040, then 1.2.</strong> Aging treatments arrive and improve, crossing the escape threshold around 2040, but only just. Life expectancy reaches about 153 by 2100.</dd></div>
+              <div><dt>Medium LEV</dt><dd><strong>Annual gains of 0.25 to 2030, 0.5 to 2035, 1.0 to 2040, then 1.5.</strong> The default. Treatments spread through the 2030s and compound, giving about 97 in 2050 and 172 in 2100.</dd></div>
+              <div><dt>Fast LEV</dt><dd><strong>The early gains of 0.25, 0.8 and 1.5 per year, then 150 by 2050, then 1.5 per year.</strong> A deployment jump: once therapies work, they reach most people within about a decade. The 150 is an absolute level reached by every place, and life expectancy is 225 by 2100.</dd></div>
+            </dl>
+            <p>The presets are defined as annual gains from each place's own 2022 life expectancy, so switching place recomputes them for that place, unless you have edited the life-expectancy checkpoints by hand (adding or removing a checkpoint counts). Every LEV preset keeps its stated rate until the model's ceiling of 500 years, and Approaching 95 gets checkpoints in the years it reaches 85 and 95, so each path keeps the slopes it describes. Preset checkpoints are rounded to the nearest half year; between checkpoints the path is not rounded.</p>
+            <p>In practice the mortality curve stops improving at a life expectancy of about 456. Beyond that point the background death rate alone, about 0.3 per 1,000 a year at most ages and more around young adulthood, keeps life expectancy below the age-500 limit of the model. Removing that background is the job of the caution lever.</p>
+            <div class="guide-note">
+              <strong>One honest caveat.</strong>
+              <p>Populations have gained more than a year of life expectancy per year before, as Japan did after 1947, but only while deaths in childhood and early adulthood were collapsing. None has yet sustained such gains once early-life deaths were already low, which is what LEV requires. The LEV presets describe what would follow from that technology, not a prediction of when it arrives. Curves for life expectancies of 150 or 500 are extrapolations of the observed shape of human mortality, which is exactly what a scenario about unprecedented longevity requires.</p>
+            </div>
+          </section>
+
+          <section class="guide-section" id="guide-caution">
+            <p class="guide-eyebrow">The deaths that aging research does not touch</p>
+            <h2>Caution and migration</h2>
+            <h3>Caution: deaths that are not caused by aging</h3>
+            <p>Even a complete cure for aging leaves the deaths that have nothing to do with biological age: accidents, drug overdoses, suicide, homicide and similar causes. Today they are a small share of all deaths. Under LEV they become almost the only deaths left, and they set the long-run floor on mortality. For scale, the WHO counts about 4.4 million deaths a year from injuries of all kinds, including road deaths, suicide and violence: nearly 8% of all deaths, or about 0.55 per 1,000 people per year.</p>
+            <p>The mortality curves carry that floor too. However high life expectancy goes, a 30-year-old's annual risk of death in the model never falls below about 0.6 per 1,000, because only the aging part of the curve shifts. The caution lever removes it: a caution value <em>c</em>, from 0 to 1, subtracts <em>c</em> deaths per 1,000 from the annual death probability at every age, and rates never go below zero. Once aging deaths are gone, a caution of 1 takes young and middle-aged death rates to zero, which is how the "nobody dies" runs above are produced. The default keeps caution at 0 until 2050 and raises it to 1 by 2100, as aging deaths disappear and the remaining risks become the ones left to eliminate.</p>
+            <p>Caution is applied after the mortality curve has been fitted to the checkpoint life expectancy. The life expectancy you enter therefore describes mortality before caution; with caution above zero, actual survival is better than that number. In the default scenario the 2100 checkpoint of 172 years corresponds to about 180 once caution 1 is applied. In the Death Curve panel, curves for simulated years include caution; curves added by life expectancy do not.</p>
+            <h3>Migration</h3>
+            <p>Net migration is entered per 1,000 residents per year. In the historical record it is the residual of population change minus births plus deaths, except for the world, where it is exactly zero. In the simulation, the per-mille rate becomes an absolute number each year and is spread across ages with a profile weighted toward young adults and their children: about two thirds of net migrants are 15 to 49 and a quarter are children. World migration can be set to a non-zero value, but only as a hypothetical.</p>
+          </section>
+
+          <section class="guide-section" id="guide-checkpoints">
+            <p class="guide-eyebrow">How a scenario is specified</p>
+            <h2>Checkpoints, interpolation and the 2022 anchor</h2>
+            <dl class="decision-list">
+              <div><dt>2022 is the present</dt><dd>The source series for 2023 to 2025 are inconsistent across places and providers, so 2022 is the last observed year and everything after it is simulated. Mixing those partial years into the baseline would put artificial jumps into births and deaths.</dd></div>
+              <div><dt>Interpolation</dt><dd>The 2022 values are always the first point: observed TFR and life expectancy (for groups without their own fertility series, the TFR estimated from their births), and zero migration and caution. Between checkpoints every variable changes linearly, so with a first checkpoint in 2030, 2024 is 75% of the 2022 value plus 25% of the 2030 value. After the last checkpoint the last value is held.</dd></div>
+              <div><dt>Ordering</dt><dd>Checkpoints sort themselves by year once a year has been typed in full, so a half-typed year never jumps to the wrong position.</dd></div>
+              <div><dt>The 2022 handoff</dt><dd>The simulation starts from the observed 2022 age structure, births and deaths. The modeled deaths by age are scaled to match the observed 2022 total while keeping the shape of the curve; from 2023 on, deaths come from the curves and the cohorts alone.</dd></div>
+            </dl>
           </section>
 
           <section class="guide-section" id="guide-history">
             <p class="guide-eyebrow">What is measured and what is reconstructed</p>
             <h2>The historical foundation</h2>
             <div class="history-band" aria-label="Data and model timeline">
-              <div class="history-era reconstructed"><strong>Long-run past</strong><span>Population series can extend to year 1. Births, deaths, TFR, life expectancy, and age structure are reconstructed where direct series do not exist.</span></div>
-              <div class="history-era observed"><strong>1950-2022</strong><span>The strongest common coverage. Direct international estimates are preferred and the 2022 age structure anchors the simulation.</span></div>
-              <div class="history-era simulated"><strong>2023 onward</strong><span>Every value is produced by the visualizer from the selected assumptions and inherited cohorts.</span></div>
+              <div class="history-era reconstructed"><strong>Long-run past</strong><span>Population series reach back thousands of years. Births, deaths, TFR, life expectancy and age structure are reconstructed where direct series do not exist.</span></div>
+              <div class="history-era observed"><strong>1950-2022</strong><span>The strongest common coverage. Direct international estimates are preferred, and the 2022 age structure seeds the simulation.</span></div>
+              <div class="history-era simulated"><strong>2023 onward</strong><span>Every value is produced by the visualizer from the chosen assumptions and the inherited cohorts.</span></div>
             </div>
-            <p>Source coverage differs by place and year. The app therefore uses an explicit fallback order instead of pretending every historical point has the same evidential status.</p>
             <dl class="decision-list">
-              <div><dt>Population</dt><dd>Use the long-run population series first, with the historical population series as a fallback.</dd></div>
-              <div><dt>Births</dt><dd>Prefer direct annual counts, then regional counts, then a crude birth rate multiplied by population, then a stable-population estimate. When overlapping loaded birth series disagree, the lower finite value is selected by default. Counts are bounded to plausible annual rates to suppress isolated source glitches.</dd></div>
-              <div><dt>Deaths</dt><dd>Prefer direct annual counts, then regional counts. Where those are absent, infer deaths from births minus population change; a life-expectancy-based stable mortality estimate is the final fallback. Historical counts are also bounded to plausible annual rates.</dd></div>
-              <div><dt>TFR</dt><dd>Prefer the lower of the two loaded fertility series. Before observed TFR begins, infer it from births, population, estimated reproductive exposure, growth, and survival, then smoothly calibrate toward the first observed TFR for that place.</dd></div>
-              <div><dt>Life expectancy</dt><dd>Use direct annual values where available and interpolate gaps. Earlier values are cautiously extrapolated downward with a floor; the forward simulation replaces source projections with user checkpoints.</dd></div>
-              <div><dt>Age structure</dt><dd>Convert five-year age groups to single-year cohorts with interpolation, extend the open 100+ group with a declining tail, and rescale the result to the total population. Where no age groups exist, construct a stable age distribution from growth and mortality.</dd></div>
+              <div><dt>Births and TFR: the lower estimate</dt><dd>Where two loaded series disagree on births or on TFR, the lower value is used. This is deliberate: UN estimates of recent births have run above the registered counts in several countries with near-complete registration, by 13.8% for Colombia, Egypt and Türkiye combined in 2022-23 (Fernández-Villaverde and Norrick, 2026), and the UN's own revisions have moved its outlook down. For 1950 to 2022, though, both loaded series come from the UN and agree, so the rule changes nothing in the modern record and the 2022 starting point is the UN estimate. If that estimate is too high, the simulation starts with slightly too many births, and its population results are, if anything, on the high side. The rule applies to the machine-readable series the app loads; it does not scrape other sources.</dd></div>
+              <div><dt>Births</dt><dd>The lower of the two annual count series where either exists; otherwise a crude birth rate times population, then a stable-population estimate. Counts are bounded to plausible annual rates to suppress isolated source glitches.</dd></div>
+              <div><dt>Deaths</dt><dd>Direct annual counts first, then regional counts. Where both are missing, deaths are inferred from births minus population change, with a mortality-curve estimate as the last resort.</dd></div>
+              <div><dt>TFR before the record</dt><dd>Inferred from births, population, growth and the survival implied by that year's life expectancy, then smoothly calibrated to the first observed TFR for the place, so the past joins the record without a jump.</dd></div>
+              <div><dt>Life expectancy</dt><dd>Direct annual values where they exist, interpolated across gaps, and extrapolated cautiously downward before the first observation.</dd></div>
+              <div><dt>Age structure</dt><dd>Five-year age groups are interpolated into single years so cohorts are never dumped into one age, the open 100+ group is extended with a declining tail, and the result is rescaled to the total population. Where no age data exist, a stable age distribution is built from growth and mortality.</dd></div>
             </dl>
             <div class="guide-note">
               <strong>Historical does not always mean observed.</strong>
-              <p>Before 1950, and for sparse country-years, some smooth curves are model-assisted reconstructions. They are useful for broad trajectories, not for fine annual claims.</p>
+              <p>Before 1950, and for sparse country-years, smooth curves are model-assisted reconstructions. They are good for long-run trajectories, not for claims about a single year.</p>
             </div>
           </section>
 
           <section class="guide-section" id="guide-engine">
             <p class="guide-eyebrow">The annual cohort ledger</p>
             <h2>How the simulation advances</h2>
-            <p>The engine uses a cohort-component approach: a standard demographic idea implemented here in single-year ages. Each simulated year follows the same sequence.</p>
+            <p>The engine is a cohort-component model, the standard method of demographic projection, run in single years of age up to 500. Each simulated year follows the same steps.</p>
             <ol class="engine-steps">
-              <li><span>1</span><div><strong>Start with one-year cohorts.</strong><p>The 2022 distribution is smoothed from source age groups and scaled to the observed population.</p></div></li>
-              <li><span>2</span><div><strong>Calculate births.</strong><p>Women are approximated as half of each cohort from ages 15-49. A fixed fertility-by-age profile converts TFR into annual births.</p></div></li>
-              <li><span>3</span><div><strong>Apply mortality by age.</strong><p>Each cohort is multiplied by that year's annual probability of death at its age. Deaths are summed across all ages.</p></div></li>
-              <li><span>4</span><div><strong>Age the survivors.</strong><p>Survivors move forward exactly one age. Births enter age zero.</p></div></li>
-              <li><span>5</span><div><strong>Apply net migration.</strong><p>The per-mille assumption becomes an absolute total and is distributed with a generic profile weighted toward working ages and children.</p></div></li>
-              <li><span>6</span><div><strong>Repeat.</strong><p>The resulting age structure becomes the starting point for the next year, preserving demographic momentum.</p></div></li>
+              <li><span>1</span><div><strong>Start from one-year cohorts.</strong><p>In 2022 these are the observed age structure, smoothed into single years and scaled to the observed population.</p></div></li>
+              <li><span>2</span><div><strong>Calculate births.</strong><p>Half of each cohort aged 15 to 49 counts as women, and a fixed age pattern of fertility, peaking in the late twenties, turns that year's TFR into births.</p></div></li>
+              <li><span>3</span><div><strong>Apply mortality by age.</strong><p>Each cohort is multiplied by that year's probability of dying at its age, from the curve for that year's life expectancy with caution applied.</p></div></li>
+              <li><span>4</span><div><strong>Age the survivors.</strong><p>Survivors move up one year of age and the new births enter at age 0.</p></div></li>
+              <li><span>5</span><div><strong>Add net migration.</strong><p>The per-mille rate becomes an absolute number and is spread across ages.</p></div></li>
+              <li><span>6</span><div><strong>Repeat.</strong><p>The new age structure starts the next year, so momentum carries forward automatically.</p></div></li>
             </ol>
-            <p>At the 2022 handoff, the modeled deaths by age are proportionally adjusted to reproduce the observed total deaths while retaining the curve's age pattern. From 2023 onward, total deaths emerge directly from the selected mortality curve and the evolving cohorts.</p>
-            <details class="guide-details">
-              <summary>Technical assumptions in the cohort engine</summary>
-              <div>
-                <p>The fertility profile is fixed across places and future years, centered in the late twenties with a smaller later-age component. The sex split is fixed at 50/50. Migration uses the same age profile everywhere. The oldest modeled age is 500, which is a finite computational guardrail rather than a claim about a biological maximum.</p>
-                <p>Negative cohort values are not allowed. Annual death probabilities are constrained between zero and 0.999999 after caution is applied.</p>
-              </div>
-            </details>
-          </section>
-
-          <section class="guide-section" id="guide-fertility">
-            <p class="guide-eyebrow">Births are a flow; fertility is a rate</p>
-            <h2>Fertility and the scenario presets</h2>
-            <p>Total fertility rate is a period measure: the number of births a woman would have if she experienced that year's age-specific fertility rates throughout her reproductive life. It is not the number of births in that year. Annual births also depend on how many people are currently at childbearing ages.</p>
-            <p>This distinction explains population momentum. A large young generation can produce many births even at a low TFR; a small generation can produce few births even when TFR rises.</p>
-            <div class="table-wrap">
-              <table class="guide-table compact-table">
-                <thead><tr><th>Fertility preset</th><th>Checkpoint path</th><th>Question it explores</th></tr></thead>
-                <tbody>
-                  <tr><td>2.1 forever</td><td>2.1 in 2030 and thereafter</td><td>Approximate long-run replacement without migration, after age structure settles.</td></tr>
-                  <tr><td>UN median</td><td>2.1 in 2030, 2.0 in 2050, 1.8 in 2100</td><td>A slow global decline around conventional projection territory.</td></tr>
-                  <tr><td>Recent trend</td><td>2.0 in 2030, 1.75 in 2040, 1.6 in 2050, 1.5 in 2100</td><td>The default lower-fertility path.</td></tr>
-                  <tr><td>Floor of 1</td><td>2.0 in 2030, 1.75 in 2040, 1.5 in 2050, 1.0 from 2070</td><td>A steep decline that eventually stabilizes at one child per woman.</td></tr>
-                  <tr><td>No social rules</td><td>2.0 in 2030, 1.9 in 2035, 1.6 in 2040, 1.2 in 2050, 0.9 from 2070</td><td>An intentionally extreme low-fertility sensitivity test.</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <p>Presets are starting points, not locked narratives. Selecting one creates or updates the necessary checkpoints; every number can then be edited. Scenario names are shorthand: "UN median" is a hand-set path in this visualizer, not a live import of the current UN medium variant.</p>
           </section>
 
           <section class="guide-section" id="guide-mortality">
-            <p class="guide-eyebrow">A life expectancy implies an entire curve</p>
-            <h2>Mortality and longevity</h2>
-            <p>Period life expectancy summarizes the age-specific death rates of one year. It asks how long a newborn would live if that year's mortality rates remained unchanged throughout life. It is not the predicted lifespan of a real newborn whose conditions will continue to change.</p>
-            <p>To turn a chosen life expectancy into annual deaths, the visualizer constructs a generalized mortality curve. Adult disease mortality follows a Gompertz-Makeham shape: a low background risk plus a risk that rises exponentially with age. Infant, childhood, young-adult external, and late-life components are added. The adult curve is shifted until the life table generated by all age-specific rates matches the requested life expectancy.</p>
+            <p class="guide-eyebrow">A life expectancy implies a whole curve</p>
+            <h2>Mortality curves</h2>
+            <p>Life expectancy is a summary of one year's death rates at every age. To turn a life expectancy into deaths, the visualizer builds a complete curve for it. Adult disease mortality follows the Gompertz-Makeham law: a small constant background risk plus a risk that roughly doubles with every eight years of adult age. Infant, childhood, young-adult external and background components are added, scaled to the life expectancy, and the aging (Gompertz) term is shifted along the age axis until the life expectancy the whole curve implies matches the one requested.</p>
+            <p>This is what lets the model go beyond observed experience. The shift that turns a life-expectancy-75 curve into an 85 curve is the same operation that produces 150 or 500: the rise in risk with age keeps its shape and starts later. A country with life expectancy 55 gets the same treatment in the other direction, with heavier infant and childhood mortality.</p>
             <div class="mortality-pair">
-              <div><strong>Generalized curve</strong><p>Includes disease mortality plus modeled infant, childhood, external, and other-age effects. It drives deaths, survival to age 15, and population simulation.</p></div>
-              <div><strong>Disease-only curve</strong><p>Retains the adult disease shape and removes the external component. It is used only for mortality-equivalent age so accidents and early-life conditions do not masquerade as aging.</p></div>
+              <div><strong>Generalized curve</strong><p>All causes: disease plus infant, childhood, external and background components. It drives deaths, survival to 15 and the population simulation.</p></div>
+              <div><strong>Disease-only curve</strong><p>The disease component alone, fitted so that it by itself gives the chosen life expectancy. It is used only for feel age.</p></div>
             </div>
-            <p>The death-curve panel uses a hybrid vertical scale. Rates from 0 to 0.1 deaths per 1,000 are linear and receive one band of space; rates from 0.1 to 1,000 are logarithmic. This keeps tiny improvements visible without flattening the steep old-age rise. The horizontal range ends when all displayed curves reach 995 deaths per 1,000, subject to the age-500 guardrail.</p>
-            <details class="guide-details">
-              <summary>What the life-expectancy presets mean</summary>
-              <div>
-                <dl class="decision-list small-list">
-                  <div><dt>Halt</dt><dd>Hold 2022 period life expectancy constant.</dd></div>
-                  <div><dt>0.25 forever</dt><dd>Add 0.25 years of life expectancy per calendar year.</dd></div>
-                  <div><dt>Approaching 95</dt><dd>Add 0.25 per year until 85, then 0.1 per year until 95, then stop.</dd></div>
-                  <div><dt>Slow LEV</dt><dd>Annual gains step from 0.25 to 0.4, 0.8, and then 1.2 years.</dd></div>
-                  <div><dt>Medium LEV</dt><dd>The default: annual gains step from 0.25 to 0.5, 1.0, and then 1.5 years.</dd></div>
-                  <div><dt>Fast LEV</dt><dd>Accelerates rapidly, reaches life expectancy 150 in 2050 and 225 in 2100, then interpolates toward the age-500 model cap in 2400.</dd></div>
-                </dl>
-                <p>LEV means longevity escape velocity in this interface. It is used as a scenario label, not as an empirical claim that such a threshold has been reached.</p>
-              </div>
-            </details>
-            <div class="guide-note caution-note">
-              <strong>Extreme longevity is deliberate extrapolation.</strong>
-              <p>Curves for life expectancy 120, 150, 200, or higher extend a smooth mortality relationship far outside modern observations. They are a way to make assumptions mathematically usable, not evidence that those lifespans are attainable.</p>
-            </div>
+            <p>The Death Curve panel uses a hybrid vertical scale: linear from 0 to 0.1 deaths per 1,000, then logarithmic up to 1,000, with the linear band taking the same height as one decade of the log scale. Very low rates stay visible, zero can be shown, and the steep rise in old age is not flattened. The horizontal range ends once every curve shown has reached its maximum (995 deaths per 1,000, less any caution).</p>
           </section>
 
-          <section class="guide-section" id="guide-new-concepts">
-            <p class="guide-eyebrow">Exploratory measures introduced here</p>
-            <h2>Survival-adjusted fertility and feel age</h2>
-            <p>Two measures in this visualizer are interpretive tools rather than standard official indicators. They are designed to expose relationships that ordinary TFR and chronological age leave implicit.</p>
-
+          <section class="guide-section" id="guide-adjusted">
+            <p class="guide-eyebrow">A measure built for this tool</p>
+            <h2>Survival-adjusted TFR: the children who reach 15</h2>
             <div class="concept-block">
               <div class="concept-number">01</div>
               <div>
-                <h3>Under-15 survival-adjusted TFR</h3>
-                <p>The measure discounts TFR by the probability that a newborn survives to age 15 under the generalized mortality curve for that place and year.</p>
+                <h3>What it measures</h3>
+                <p>TFR counts births. What matters for the next generation is how many of those children live long enough to become parents. The survival-adjusted line multiplies TFR by the probability of surviving from birth to 15, taken from the generalized mortality curve for that place and year. It uses the full 0 to 15 window, not just infant or under-five mortality, because deaths between 5 and 15 were common in the past.</p>
                 <div class="concept-equation">Survival-adjusted TFR = TFR x probability of surviving to age 15</div>
-                <p>Its purpose is to distinguish births from the number of children who reach the threshold of reproductive age. It is especially informative in the high-child-mortality past.</p>
-                <p class="concept-limit"><strong>It is not a replacement fertility rate.</strong> It does not model sex-specific survival, future fertility of the survivors, maternal mortality, infertility, or the full generation interval.</p>
+                <p>In the high-mortality past the two lines are far apart, which is why high fertility in the past did not mean fast growth. In the model the world's TFR of 4.2 in 1800 is 2.8 once the third of children who died before 15 are removed, and 4.9 in 1950 becomes 3.5. Today the gap is much smaller, and under LEV the two lines become one, which is the cleanest way to see why replacement falls from 2.1 toward 2.0.</p>
+                <p class="concept-limit"><strong>It is not a net reproduction rate.</strong> It ignores sex-specific survival, deaths between 15 and the age of childbearing, and maternal mortality. Survival to 15 comes from the model's mortality curve, which for recent decades puts child deaths too high: about 9% before 15 for the world in 2022, against about 4.6% observed, so the modern adjusted line runs low.</p>
               </div>
             </div>
-
-            <div class="concept-block">
-              <div class="concept-number">02</div>
-              <div>
-                <h3>Mortality-equivalent, or "feel," age</h3>
-                <p>For an actual age under the selected life expectancy, the model finds the age on a life-expectancy-75 disease-only curve with the same annual mortality rate. If an age-78 person in one curve has the disease mortality of an age-70 person on the baseline, the visualizer reports a feel age of about 70.</p>
-                <p>The comparison begins at age 20. People younger than 20 remain at their chronological ages. If extreme longevity maps many adults to the age-20 floor, their distribution is spread from 20 to 40 with a five-year half-life, making age 20 twice as likely as 25, 25 twice as likely as 30, and so on. Linear interpolation between ages prevents whole cohorts from being dumped into a single year, and the total population is preserved.</p>
-                <p class="concept-limit"><strong>This is not subjective wellbeing, disability-free life expectancy, biological age, or a clinical health score.</strong> It is only an equivalence between modeled disease mortality rates.</p>
-              </div>
-            </div>
-
-            <p>In the comparison pyramid, the actual and feel-age halves are normalized independently to occupy the same width. That makes their shapes legible even when one distribution is concentrated into a narrower age range. Hover values remain real people counts, but bar width should not be used to compare absolute totals across the two halves.</p>
-          </section>
-
-          <section class="guide-section">
-            <p class="guide-eyebrow">The remaining assumptions</p>
-            <h2>Migration, caution, and interpolation</h2>
-            <dl class="decision-list">
-              <div><dt>Historical migration</dt><dd>Calculated as the residual of population change minus births plus deaths. Because the world has no external migration, world historical migration is fixed at zero.</dd></div>
-              <div><dt>Future migration</dt><dd>Entered as net migrants per 1,000 residents each year, converted to an absolute total, then distributed across ages with a common working-age and family profile. World migration remains editable only as a hypothetical sensitivity test.</dd></div>
-              <div><dt>Caution</dt><dd>A value from 0 to 1 subtracts that many deaths per 1,000 from every age-specific annual death probability after the curve has been calibrated to the chosen life expectancy. Values floor at zero. This raises realized survival beyond the life-expectancy checkpoint and is best understood as a uniform mortality-improvement stress test.</dd></div>
-              <div><dt>Interpolation</dt><dd>The observed 2022 value is always the baseline. Between checkpoints, TFR, life expectancy, migration, and caution change linearly. After the final checkpoint, the final value is held constant.</dd></div>
-              <div><dt>Checkpoint precision</dt><dd>Life expectancy is displayed and stored to the nearest half year when presets are applied. The annual interpolation and mortality calibration still use numeric precision internally.</dd></div>
-            </dl>
           </section>
 
           <section class="guide-section" id="guide-panels">
-            <p class="guide-eyebrow">What each view is actually saying</p>
+            <p class="guide-eyebrow">What each view is saying</p>
             <h2>Reading the panels</h2>
             <div class="table-wrap">
               <table class="guide-table panel-guide-table">
-                <thead><tr><th>Panel</th><th>What it answers</th><th>Interpretation note</th></tr></thead>
+                <thead><tr><th>Panel</th><th>What it answers</th><th>Reading note</th></tr></thead>
                 <tbody>
-                  <tr><td>Total Population</td><td>How many people are alive?</td><td>Line color encodes annual growth: warm colors mark fast growth, greens slow growth, cyan near-zero change, and blue through magenta decline. Expand the key for exact bands.</td></tr>
-                  <tr><td>Births and Deaths</td><td>What are the two main natural flows?</td><td>The gap is natural increase or decrease, not total growth unless migration is zero.</td></tr>
-                  <tr><td>TFR</td><td>What fertility regime produces births?</td><td>The adjusted line discounts for modeled mortality before age 15; it is not an official TFR series.</td></tr>
-                  <tr><td>Life Expectancy</td><td>How is the mortality schedule shifting?</td><td>Color encodes annual change, from red for decline through yellow and green to blue for the fastest gains.</td></tr>
-                  <tr><td>Growth Rate</td><td>How fast is population changing relative to its size?</td><td>A percentage can shrink while absolute growth remains large.</td></tr>
-                  <tr><td>Absolute Growth</td><td>How many people are added or lost each year?</td><td>This is population change, combining natural change and migration.</td></tr>
-                  <tr><td>Net Migration</td><td>How many net migrants are added or removed?</td><td>Historical values are residual estimates; future values come from the per-mille assumption.</td></tr>
-                  <tr><td>Migration Per Mille</td><td>How large is migration relative to population?</td><td>One per mille means one net migrant per 1,000 residents in that year.</td></tr>
-                  <tr><td>Death Curve</td><td>At what ages is annual mortality concentrated?</td><td>Add up to ten years or life expectancies. Curves include caution for simulated years.</td></tr>
-                  <tr><td>Population Pyramid</td><td>What is the age structure?</td><td>The source cohorts are not sex-specific here; each age is split equally into female and male halves.</td></tr>
-                  <tr><td>Feel-Age Comparison</td><td>How does chronological age structure differ from mortality-equivalent age?</td><td>Starts at age 20 and independently scales the two sides for shape comparison.</td></tr>
-                  <tr><td>Selected Age Share</td><td>What percentage lies within an age interval?</td><td>Edit both ages inside the panel. Historical values use the best available cohort reconstruction.</td></tr>
-                  <tr><td>Median / Percentile Age</td><td>At what age is a chosen cumulative share reached?</td><td>At 50%, this is the median. The adjusted line applies the feel-age transformation first.</td></tr>
-                  <tr><td>Health / Feel Age</td><td>How does actual age map onto the LE-75 mortality baseline?</td><td>Uses disease-only curves; it is a model relationship, not a medical assessment.</td></tr>
+                  <tr><td>Total Population</td><td>How many people are alive?</td><td>Line color is the growth rate: reds and oranges for fast growth, greens for slow, teal near zero, blues to magenta for decline. Expand the key for the bands. Under LEV, watch the line turn green, then teal, then flatten.</td></tr>
+                  <tr><td>Births and Deaths</td><td>What are the two natural flows?</td><td>The gap is natural increase. Under LEV the deaths line drops toward zero and the population follows births alone.</td></tr>
+                  <tr><td>TFR and Survival-Adjusted TFR</td><td>How much fertility reaches age 15?</td><td>See the section above.</td></tr>
+                  <tr><td>Life Expectancy</td><td>How fast is the mortality curve moving?</td><td>Color is the annual gain: red for decline, yellow to green for ordinary progress, cyan around one year per year and blues beyond it, past escape velocity.</td></tr>
+                  <tr><td>Growth Rate</td><td>How fast is population changing relative to its size?</td><td>A falling percentage can hide large absolute growth.</td></tr>
+                  <tr><td>Absolute Growth</td><td>How many people are added or lost each year?</td><td>Natural change plus migration. Under LEV with low fertility it falls toward zero: the approach to the ceiling.</td></tr>
+                  <tr><td>Net Migration, Migration Per Mille</td><td>How large are migration flows?</td><td>Historical values are residuals; future values come from the checkpoints. One per mille is one net migrant per 1,000 residents.</td></tr>
+                  <tr><td>Death Curve</td><td>At what ages does death happen?</td><td>Starts with life expectancy 75 and the comparison year; add years or life expectancies up to ten curves in total. Curves for simulated years include caution.</td></tr>
+                  <tr><td>Population Pyramid</td><td>What is the age structure?</td><td>Each age is split evenly between women and men, because the cohorts are not sex-specific. Any year from the past or the simulation can be shown; Dynamic sets the height to the 99.9th age percentile plus five years.</td></tr>
+                  <tr><td>Feel-Age Comparison</td><td>How does actual age compare with feel age?</td><td>From age 20 up. Each side is the whole population, scaled to its own maximum so the shapes can be compared; hover values are real people counts.</td></tr>
+                  <tr><td>Selected Age Share</td><td>What share of people fall in an age range?</td><td>Set both ages in the panel. The default, 65 to 100, is the conventional "elderly" share, which feel age shows to be misleading under LEV.</td></tr>
+                  <tr><td>Median / Percentile Age</td><td>At what age is a chosen share of the population reached?</td><td>At 50% this is the median. The feel line applies the feel-age transformation first.</td></tr>
+                  <tr><td>Health / Feel Age</td><td>What feel age does each actual age have?</td><td>For any life expectancy, on disease-only curves.</td></tr>
                 </tbody>
               </table>
             </div>
-            <p>Drag across a chart to zoom its x-axis. Double-click a chart or use Reset zoom on all graphs to return. "Y starts at 0" trades local detail for an honest view of absolute scale. Panels can be moved, resized, minimized, enabled, or disabled; Reset graphs restores a clean packing without resetting the demographic assumptions.</p>
-            <p>Dynamic pyramid height uses the 99.9th age percentile plus five years, rounded, so the axis follows the meaningful population rather than a fixed maximum.</p>
+            <p>Drag across a chart to zoom into a range of years, and use Reset zoom on all graphs to return. "Y starts at 0" trades local detail for an honest sense of scale. Panels can be moved, resized, minimized and switched on or off; the other panels make room, and Reset graphs restores a clean layout without touching the assumptions.</p>
           </section>
 
           <section class="guide-section" id="guide-geography">
-            <p class="guide-eyebrow">World, regions, and countries</p>
+            <p class="guide-eyebrow">World, regions and countries</p>
             <h2>How places are assembled</h2>
-            <p>The place menu is ordered from World to continents, then custom and UN-style regions, then countries. The European Union and ASEAN are explicit groups. The UN geoscheme-inspired Asian grouping places Iran and Afghanistan in Central Asia, as requested; European and Oceanian subregions are omitted.</p>
-            <p>Group population, births, deaths, cohorts, and migration are assembled from their available members. Group life expectancy is population-weighted. Where a custom group has no direct fertility series, its TFR is inferred from aggregate births, population, growth, survival, and reproductive exposure rather than averaged country by country.</p>
-            <p>Membership is fixed in the code and does not change historically. Territorial definitions, missing member series, and name mismatches can therefore create differences from official aggregates.</p>
+            <p>The place menu runs from World to the continents, then groups (the European Union, ASEAN and the regions of the UN geoscheme, in alphabetical order), then countries. Iran and Afghanistan are grouped with Central Asia, and the European and Oceanian subregions are left out.</p>
+            <p>A group's population, births, deaths, age structure and migration are summed from its members, and its life expectancy is population-weighted. Where a group has no direct fertility series, its TFR is inferred from its combined births, population, growth and survival rather than averaged country by country. Membership is fixed and does not change over history, so totals can differ from official aggregates.</p>
           </section>
 
           <section class="guide-section" id="guide-limits">
-            <p class="guide-eyebrow">Responsible interpretation</p>
-            <h2>What the model cannot know</h2>
+            <p class="guide-eyebrow">What the model does not do</p>
+            <h2>Limits</h2>
             <ul class="limits-list">
-              <li><strong>It is deterministic.</strong> It does not attach probabilities or uncertainty intervals to a path.</li>
-              <li><strong>It does not forecast shocks.</strong> Wars, pandemics, famines, policy changes, climate events, and migration crises appear only if their effects are entered manually.</li>
-              <li><strong>Mortality is generalized.</strong> One life expectancy can correspond to many real age-specific mortality schedules. The visualizer chooses one smooth family so a complete curve always exists.</li>
-              <li><strong>Very high life expectancy is out of sample.</strong> Extrapolated curves become increasingly speculative as they leave observed human experience.</li>
-              <li><strong>Fertility timing is fixed.</strong> The age pattern of births does not shift by country, culture, technology, or year.</li>
-              <li><strong>Sex differences are averaged away.</strong> Fertility uses a 50% female assumption; pyramids split every cohort 50/50; mortality is not sex-specific.</li>
-              <li><strong>Migration is simplified.</strong> A generic age profile cannot represent a particular refugee flow, student migration, retirement migration, or family-reunification pattern.</li>
-              <li><strong>Historical precision varies.</strong> Smooth early curves can be the output of interpolation and demographic identities rather than annual vital registration.</li>
-              <li><strong>Live sources can be revised.</strong> The same URL may later return updated values, so exported scenarios record results but do not freeze source datasets.</li>
-              <li><strong>The lowest-source rule is limited to loaded data.</strong> The app does not automatically scrape Wikipedia tables; it chooses the lowest available machine-readable birth or fertility value among its configured sources.</li>
+              <li><strong>It is deterministic.</strong> One set of assumptions gives one path; there are no probability ranges.</li>
+              <li><strong>It does not forecast shocks.</strong> Wars, pandemics, famines and policy changes appear only if you enter their effects.</li>
+              <li><strong>Mortality follows one family of curves.</strong> Many real age patterns share a life expectancy; the model always uses the same smooth shape.</li>
+              <li><strong>The fertility age pattern is fixed.</strong> Births do not shift to later ages, even under LEV, where a longer healthy life might change when people have children.</li>
+              <li><strong>Sex is averaged away.</strong> Half of each cohort counts as women, pyramids split every age evenly, and mortality is not sex-specific.</li>
+              <li><strong>Migration uses one age profile.</strong> It cannot represent a particular refugee, student or retirement flow.</li>
+              <li><strong>Historical precision varies.</strong> Early curves come partly from interpolation and demographic identities rather than registration.</li>
+              <li><strong>Sources are live.</strong> The data load from Our World in Data each time, so revised source values change results; an exported scenario records results but not the source data.</li>
             </ul>
             <div class="guide-callout final-callout">
               <strong>Best use: compare mechanisms, not headlines.</strong>
-              <p>A valuable conclusion is usually conditional: "With this fertility path, mortality curve, migration rate, and starting age structure, this follows." Keeping the conditions visible is the point of the tool.</p>
+              <p>The most useful conclusions are conditional: with this fertility path, this mortality schedule, this migration and this starting age structure, this follows. Keeping the conditions visible is the point of the tool.</p>
             </div>
           </section>
 
           <section class="guide-section" id="guide-sources">
-            <p class="guide-eyebrow">Data provenance</p>
+            <p class="guide-eyebrow">Data and references</p>
             <h2>Sources and further reading</h2>
-            <p>The visualizer loads machine-readable chart data live from Our World in Data. Those chart datasets assemble and process underlying work from the United Nations World Population Prospects, the Human Mortality Database, historical population reconstructions, Gapminder, UN IGME, and other providers. Follow each chart link for its current metadata, citations, and licensing.</p>
+            <p>The visualizer loads machine-readable chart data live from Our World in Data, which assembles work from the UN World Population Prospects, the Human Mortality Database, historical population reconstructions, Gapminder, UN IGME and other providers. Follow each link for its current metadata, citations and license.</p>
             <div class="source-grid">
               <div>
                 <h3>Population and flows</h3>
@@ -485,7 +511,6 @@
                 <a href="https://ourworldindata.org/grapher/births-and-deaths-projected-to-2100" target="_blank" rel="noopener">Births and deaths</a>
                 <a href="https://ourworldindata.org/grapher/annual-number-of-births-by-world-region" target="_blank" rel="noopener">Births by world region</a>
                 <a href="https://ourworldindata.org/grapher/annual-number-of-deaths-by-world-region" target="_blank" rel="noopener">Deaths by world region</a>
-                <a href="https://ourworldindata.org/grapher/population-growth-rate" target="_blank" rel="noopener">Population growth rate</a>
               </div>
               <div>
                 <h3>Fertility and age</h3>
@@ -493,44 +518,56 @@
                 <a href="https://ourworldindata.org/grapher/children-born-per-woman" target="_blank" rel="noopener">Children born per woman</a>
                 <a href="https://ourworldindata.org/grapher/long-run-birth-rate" target="_blank" rel="noopener">Long-run birth rate</a>
                 <a href="https://ourworldindata.org/grapher/population-by-five-year-age-group" target="_blank" rel="noopener">Population by five-year age group</a>
-                <a href="https://ourworldindata.org/grapher/youth-mortality-rate" target="_blank" rel="noopener">Mortality before age 15</a>
               </div>
               <div>
                 <h3>Mortality and methods</h3>
                 <a href="https://ourworldindata.org/grapher/life-expectancy" target="_blank" rel="noopener">Life expectancy long-run data</a>
-                <a href="https://ourworldindata.org/grapher/annual-death-rates-in-different-age-groups" target="_blank" rel="noopener">Annual death rates by age</a>
                 <a href="https://www.un.org/development/desa/pd/content/world-population-prospects-2024-methodology-report" target="_blank" rel="noopener">UN WPP 2024 methodology</a>
                 <a href="https://www.mortality.org/Project/Overview" target="_blank" rel="noopener">Human Mortality Database overview</a>
-                <a href="https://www.mortality.org/File/GetDocument/Public/Docs/MethodsProtocolV6.pdf" target="_blank" rel="noopener">HMD methods protocol</a>
+              </div>
+              <div>
+                <h3>Arguments referred to</h3>
+                <a href="https://population.un.org/wpp/assets/Files/WPP2024_Summary-of-Results.pdf" target="_blank" rel="noopener">UN World Population Prospects 2024: summary of results</a>
+                <a href="https://doi.org/10.1016/S0140-6736(24)00550-6" target="_blank" rel="noopener">GBD 2021 Fertility Collaborators, fertility forecasts to 2100 (The Lancet, 2024)</a>
+                <a href="https://economics.sas.upenn.edu/system/files/working-papers/26-016%20PIER%20Paper%20Submission.pdf" target="_blank" rel="noopener">Fernández-Villaverde and Norrick, Terra Incognita (2026)</a>
+                <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC423155" target="_blank" rel="noopener">de Grey, Escape velocity (PLoS Biology, 2004)</a>
+                <a href="https://doi.org/10.1126/science.1069675" target="_blank" rel="noopener">Oeppen and Vaupel, Broken limits to life expectancy (Science, 2002)</a>
+                <a href="https://www.nature.com/articles/s43587-024-00702-3" target="_blank" rel="noopener">Olshansky et al., Implausibility of radical life extension (Nature Aging, 2024)</a>
+                <a href="https://www.who.int/news-room/fact-sheets/detail/injuries-and-violence" target="_blank" rel="noopener">WHO fact sheet: injuries and violence</a>
+                <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11090256/" target="_blank" rel="noopener">Gavrilov and Gavrilova, Exploring patterns of human mortality and aging (2024)</a>
               </div>
             </div>
-            <p class="source-footnote">Data labels and provider vintages can change as live datasets are revised. The visualizer's custom mortality family, survival-adjusted TFR, caution control, and feel-age transformation are model logic created for this tool and are not published indicators from the linked providers.</p>
+            <p class="source-footnote">The mortality-curve family, survival-adjusted TFR, caution, feel age and the presets are model logic created for this tool; they are not indicators published by the providers above.</p>
           </section>
 
           <section class="guide-section" id="guide-glossary">
-            <p class="guide-eyebrow">Terms used throughout the app</p>
+            <p class="guide-eyebrow">Terms used in the app</p>
             <h2>Glossary</h2>
             <dl class="glossary-list">
-              <div><dt>Age-specific death probability</dt><dd>The chance that a person alive at a given age dies before reaching the next age, expressed here per 1,000.</dd></div>
-              <div><dt>Cohort</dt><dd>People grouped by age. In the simulation, each cohort advances one year at a time.</dd></div>
-              <div><dt>Generalized mortality curve</dt><dd>The model's complete age schedule of death probabilities, including disease and external or early-life components.</dd></div>
-              <div><dt>Life expectancy</dt><dd>The expected years lived under one year's age-specific mortality rates, not a guaranteed or individually predicted lifespan.</dd></div>
-              <div><dt>Net migration</dt><dd>Immigrants minus emigrants. A negative value means more people leave than enter.</dd></div>
-              <div><dt>Per mille</dt><dd>Per 1,000 people. A migration rate of 2 per mille adds two net migrants for every 1,000 residents in that year.</dd></div>
-              <div><dt>Population momentum</dt><dd>Future growth or decline already built into the current age structure, even if rates change immediately.</dd></div>
-              <div><dt>Replacement fertility</dt><dd>The fertility level that eventually replaces one generation with the next under a given survival regime and absent migration. It is often near 2.1 in low-mortality populations, but it is not universal.</dd></div>
-              <div><dt>TFR</dt><dd>Total fertility rate, a period summary of age-specific fertility expressed as births per woman.</dd></div>
+              <div><dt>Caution</dt><dd>The lever for deaths not caused by aging: c deaths per 1,000 removed from every age's annual death probability.</dd></div>
+              <div><dt>Cohort</dt><dd>People of the same age. In the simulation each cohort moves up one year of age per year.</dd></div>
+              <div><dt>Death probability by age</dt><dd>The chance that someone alive at a given age dies before the next birthday, shown per 1,000.</dd></div>
+              <div><dt>Feel age</dt><dd>Mortality-equivalent age: the age with the same annual disease mortality on the life-expectancy-75 curve. Defined from age 20.</dd></div>
+              <div><dt>Generalized mortality curve</dt><dd>The model's full age schedule of death probabilities, including disease and external or early-life components.</dd></div>
+              <div><dt>Life expectancy</dt><dd>Years a newborn would live under one year's death rates at every age; a summary of the curve, not a prediction for a real person.</dd></div>
+              <div><dt>Longevity escape velocity (LEV)</dt><dd>Mortality falling fast enough that remaining life expectancy rises with time; in the app, life expectancy rising by more than one year per calendar year.</dd></div>
+              <div><dt>Net migration</dt><dd>Immigrants minus emigrants. Negative when more people leave than arrive.</dd></div>
+              <div><dt>Per mille</dt><dd>Per 1,000 people.</dd></div>
+              <div><dt>Population ceiling</dt><dd>The level a population approaches when deaths vanish and fertility is below replacement: everyone alive plus a finite sum of future births.</dd></div>
+              <div><dt>Population momentum</dt><dd>Growth or decline already built into the age structure, which continues for decades after rates change.</dd></div>
+              <div><dt>Replacement fertility</dt><dd>The TFR at which each generation exactly replaces the one before, absent migration. About 2.1 with modern child survival, 2.0 in this model when nobody dies before 50, and higher where child mortality is high.</dd></div>
+              <div><dt>TFR</dt><dd>Total fertility rate: the number of children per woman implied by one year's age-specific birth rates.</dd></div>
             </dl>
             <div class="guide-footer-actions">
               <button class="text-button primary" type="button" data-open-simulator><i data-lucide="line-chart" aria-hidden="true"></i><span>Return to simulator</span></button>
               <a class="text-button" href="#guide-purpose"><i data-lucide="arrow-up" aria-hidden="true"></i><span>Back to top</span></a>
             </div>
-            <p class="guide-attribution">Created by <a href="https://alejandrozarzuelo.com" target="_blank" rel="noopener">Alejandro Zarzuelo Urdiales</a>. Explore more of his work at alejandrozarzuelo.com.</p>
+            <p class="guide-attribution">Created by <a href="https://alejandrozarzuelo.com" target="_blank" rel="noopener">Alejandro Zarzuelo Urdiales</a>. More of his work is at alejandrozarzuelo.com.</p>
           </section>
         </article>
       </div>
     </main>
 
-    <script src="./app.js?v=36"></script>
+    <script src="./app.js?v=37"></script>
   </body>
 </html>
