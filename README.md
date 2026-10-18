@@ -6,7 +6,7 @@ To run it locally, serve the folder with any static web server, for example `pyt
 
 The project explores two claims about population under longevity escape velocity (LEV):
 
-1. With fertility below replacement, population approaches a ceiling a small multiple of today's, even if nobody ever dies. Fertility sets the height of the ceiling; longevity decides whether there is a ceiling or a decline.
+1. With fertility well below replacement, population approaches a ceiling even if nobody ever dies: roughly 1.5 to 3 times today's population for fertility between about 1 and 1.6 children per woman. Fertility sets the height of the ceiling; longevity decides whether there is a ceiling or a decline.
 2. Under LEV, a population with a very high median age is not old in health terms. The feel-age measures make this visible.
 
 ## What it does
@@ -22,12 +22,12 @@ The project explores two claims about population under longevity escape velocity
 - Age/mortality arrays are finite-capped at 500. Pyramid displays use the age where mortality reaches 990 per 1,000 when it occurs earlier.
 - Mortality curves start with LE 75 and the selected comparison year. Additional year or life-expectancy curves can be added inside the mortality panel, up to 10 total.
 - The 2022 simulation handoff is anchored to observed births, deaths, TFR, and life expectancy before simulated years continue forward.
-- Direct annual birth counts are preferred whenever present; crude-rate/model estimates are used only as fallbacks.
+- Annual birth counts are preferred whenever present (the lower of the two loaded series); crude-rate/model estimates are used only as fallbacks.
 - Age-share, pyramid, feel-age comparison, and health-age controls live inside their own panels.
 - Historical age-share and percentile-age rows use annual cohort distributions when age-group data is available, so the 2022 simulation handoff does not switch from a modeled age share to a different cohort method.
 - The feel-age comparison pyramid scales each half independently while keeping hover values in real people counts.
 - Population pyramid panels accept historical years before 2022 and use horizontal age hover behavior.
-- Default panels show population, births/deaths, TFR, life expectancy, growth rate, mortality, and median/percentile age; migration, absolute growth, pyramids, age share, and health/feel age start hidden.
+- Default panels show population, births/deaths, TFR, life expectancy, absolute growth, mortality, and median/percentile age; growth rate, migration, pyramids, age share, and health/feel age start hidden.
 - Supports staged editing with `Dynamic` off and manual recomputation with `Update`. Chart-only settings (Y starts at 0, pyramid year and height, age-share range, percentile, mortality curves) redraw only their own panel and apply immediately.
 - The Simulation tab shows 1950-2100; the History tab shows only the observed record, 1950-2022. Switching tabs keeps the panel layout.
 - Reset restores the default place, ranges, checkpoints, panels, panel controls, and curve selections. Export downloads the current scenario as JSON.
@@ -40,13 +40,14 @@ The project explores two claims about population under longevity escape velocity
 - Pre-1950 births are estimated from long-run birth rates and population where direct annual birth counts are unavailable.
 - Pre-1950 deaths are derived from births minus annual population change when direct annual death counts are unavailable, with a modeled mortality fallback from life expectancy.
 - Pre-1950 TFR is inferred from births, population, growth, and the modeled survival schedule, then smoothly calibrated to the first observed TFR for that place.
-- Under-15 survival-adjusted TFR is derived from the generalized mortality curve implied by that place's life expectancy in that year.
+- Under-15 survival-adjusted TFR is derived from the generalized mortality curve implied by that place's life expectancy in that year. For recent decades that curve overstates child mortality (about 9% before 15 for the world in 2022, against about 4.6% observed).
 - Historical net migration is a residual: population change minus births plus deaths. Forward migration uses the checkpoint per-mille assumption.
 - World historical migration is forced to zero. Forward world migration remains adjustable for hypothetical scenarios.
 - Five-year age groups are smoothed into single-year ages with interpolation before pyramid rendering.
 - Mortality curves beyond observed modern life expectancies are extrapolations. They are useful for scenario exploration, not forecasts.
 - Where two loaded birth or fertility series disagree, the lower is used, because UN estimates have tended to run above registered counts. It does not scrape Wikipedia tables automatically.
-- LEV presets keep their stated annual gain until the model ceiling of life expectancy 500 and add a checkpoint in the year it is reached.
+- Life-expectancy presets are annual gains from each place's own 2022 value and are recomputed when the place changes, unless the life checkpoints were edited by hand. LEV presets keep their stated gain until the model ceiling of 500 (a checkpoint is added in the year it is reached); in practice the curve stops improving near 456 because of the background death rate, which caution removes.
+- Fertility presets are world paths applied unchanged to every place.
 
 ## Performance notes
 
